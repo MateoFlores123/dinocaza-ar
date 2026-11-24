@@ -12,20 +12,20 @@
     if (!ev.newVisit) return;
     var s = DC.Store.get();
     var hatched = ev.hatched.map(function (d) {
-      return '<div class="row" style="gap:10px">' + DC.UI.img(d.sp, d.golden ? 'golden-img' : '', DC.SP[d.sp].name).replace('<img', '<img style="width:56px;height:56px;border-radius:12px;background:rgba(0,0,0,.25)"') +
-        '<div><b>¡Eclosionó un ' + DC.UI.esc(DC.SP[d.sp].name) + (d.golden ? ' dorado' : '') + '!</b><div class="muted" style="font-size:.8rem">Nv. ' + d.lvl + ' · ya está en tu equipo</div></div></div>';
+      var lk = DC.look(d.variant);
+      return '<li class="hatch">' + DC.UI.img(d.sp, '', DC.SP[d.sp].name, d.variant) + '<span><b>¡Eclosionó un ' + DC.UI.esc(DC.SP[d.sp].name) + (lk ? ' ' + DC.UI.esc(lk.name.toLowerCase()) : '') + '!</b><small>Nv. ' + d.lvl + ' · ya está en tu equipo</small></span></li>';
     }).join('');
     var pass = ev.passport.map(function (p) {
-      return '<div class="card" style="background:rgba(242,165,49,.1);border-color:rgba(242,165,49,.35)"><div class="eyebrow" style="color:var(--amber)">Sello ' + p.visit + ' · ' + DC.UI.esc(p.title) + '</div><b>' + DC.UI.esc(p.reward) + '</b></div>';
+      return '<li class="stampwin">' + (p.prize ? DC.UI.prizeArt(p.prize) : '<span class="st-ic">' + DC.UI.icon('passport') + '</span>') + '<span><b>Sello ' + p.visit + ' · ' + DC.UI.esc(p.title) + '</b><small>' + DC.UI.esc(p.reward) + '</small></span></li>';
     }).join('');
     var bonus = Math.min(5, s.visits - 1);
     DC.Audio.play(ev.hatched.length ? 'egg' : 'coin');
-    DC.UI.modal('<div class="stack"><div style="text-align:center"><div class="eyebrow">' + (simulated ? 'Modo presentación · día simulado' : 'Pasaporte Jurásico') + '</div>' +
-      '<h1>' + (ev.visitNo === 1 ? '¡Bienvenido a Dino Park!' : '¡Volviste! Visita n.º ' + ev.visitNo) + '</h1></div>' +
-      '<div class="reward-list"><div><span>Dinoesferas de hoy</span><span class="num" style="color:var(--amber)">+' + (DC.SPHERES_PER_VISIT + bonus) + '</span></div>' +
-      (ev.visitNo > 1 ? '<div><span>Tu equipo se recuperó</span><span style="color:var(--leaf)">100 %</span></div><div><span>Misiones nuevas</span><span class="num">3</span></div>' : '') + '</div>' +
-      hatched + pass +
-      '<button class="btn block" data-act="close" autofocus>' + (ev.visitNo === 1 ? 'Ver el mapa' : '¡A explorar!') + '</button></div>', { center: true, onClose: function () { DC.UI.checkMedals(); } });
+    DC.UI.modal('<div class="welcome"><div class="eyebrow">' + (simulated ? 'Modo presentación · día simulado' : 'Pasaporte Jurásico') + '</div>' +
+      '<h1>' + (ev.visitNo === 1 ? '¡Bienvenido a Dino Park!' : '¡Volviste! Visita n.º ' + ev.visitNo) + '</h1>' +
+      '<ul class="reward-list"><li><span><i class="ball-ico dino"></i> Dinoesferas de hoy</span><b class="num">+' + (DC.SPHERES_PER_VISIT + bonus) + '</b></li>' +
+      (ev.visitNo > 1 ? '<li><span>Tu equipo se recuperó</span><b>100 %</b></li><li><span>Misiones nuevas</span><b class="num">3</b></li>' : '') + '</ul>' +
+      (hatched || pass ? '<ul class="win-list">' + hatched + pass + '</ul>' : '') +
+      '<button class="btn block sun big" data-act="close">' + (ev.visitNo === 1 ? 'Ver el mapa' : '¡A explorar!') + '</button></div>', { center: true, onClose: function () { DC.UI.checkMedals(); } });
   }
 
   function zoneFromHash() {
@@ -59,7 +59,7 @@
     DC.onModelLoaded = function (id) {
       document.querySelectorAll('img[data-sp="' + id + '"]').forEach(function (im) { im.removeAttribute('src'); });
       clearTimeout(refreshT);
-      refreshT = setTimeout(function () { DC.UI.fillPortraits(document); }, 150);
+      refreshT = setTimeout(function () { DC.UI.fillPortraits(document); if (DC.Map3D) DC.Map3D.modelsChanged(); }, 150);
     };
     setTimeout(function () { DC.GLB.preloadAll(); }, 400);
     if (!s.onboarded) DC.UI.onboarding(enter);

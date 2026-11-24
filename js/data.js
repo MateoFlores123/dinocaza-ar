@@ -34,23 +34,13 @@ DC.RARITY = {
   legendaria: { id: 'legendaria', name: 'Legendaria', stars: 4, weight: 6, capture: 0.09, flee: 0.30, color: '#f4b638', xp: 250, coins: 120 }
 };
 
-DC.DIFFICULTY = {
-  facil: {
-    id: 'facil', name: 'Explorador', tag: 'Fácil', desc: 'Para niños. Ataques lentos y mucho tiempo para esquivar.',
-    enemyLvl: -1, windup: 1.55, dodgeWin: 0.95, enemyDmg: 0.55, ringSpeed: 0.7,
-    capture: 1.3, reward: 1.0, atkEvery: [3.4, 4.6], combo: 0, feint: 0
-  },
-  normal: {
-    id: 'normal', name: 'Rastreador', tag: 'Normal', desc: 'El reto equilibrado. Hay que estar atento al aviso rojo.',
-    enemyLvl: 1, windup: 1.05, dodgeWin: 0.55, enemyDmg: 1.0, ringSpeed: 1.0,
-    capture: 1.0, reward: 1.25, atkEvery: [2.5, 3.5], combo: 0.12, feint: 0
-  },
-  dificil: {
-    id: 'dificil', name: 'Paleontólogo', tag: 'Difícil', desc: 'Ataques rápidos, combos y amagues. Premios x1.75.',
-    enemyLvl: 4, windup: 0.68, dodgeWin: 0.34, enemyDmg: 1.35, ringSpeed: 1.4,
-    capture: 0.8, reward: 1.75, atkEvery: [1.8, 2.7], combo: 0.3, feint: 0.18
-  }
+/* Una sola dificultad para todos: equilibrada para niños y adultos */
+DC.DIFF = {
+  id: 'normal', name: 'Explorador',
+  enemyLvl: 0, windup: 1.2, dodgeWin: 0.62, enemyDmg: 0.85, ringSpeed: 0.9,
+  capture: 1.05, reward: 1.25, atkEvery: [2.8, 3.8], combo: 0.1, feint: 0.06
 };
+DC.DIFFICULTY = { normal: DC.DIFF };
 
 DC.DAYS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
 
@@ -303,12 +293,12 @@ DC.SPHERE_BUY_LIMIT = 6; /* compras con monedas por visita */
    Pasaporte Jurásico: recompensas por número de visitas (días distintos)
    --------------------------------------------------------------------- */
 DC.PASSPORT = [
-  { visit: 1, title: 'Primera huella', reward: '10 Dinoesferas y tu primer compañero', items: {} },
-  { visit: 2, title: 'Rastro fresco', reward: 'Huevo misterioso + 5 Dinoesferas extra. Aparece el Brachiosaurus.', items: { egg: 1, spheres: 5 } },
-  { visit: 3, title: 'Sello del Rey', reward: 'Se despierta el T. rex en la Guarida + Bebida gratis en la cafetería', items: { coins: 150 }, code: 'Bebida gratis en la cafetería' },
-  { visit: 5, title: 'Explorador fiel', reward: '20 % de descuento en tu próxima entrada', items: { coins: 250, egg: 1 }, code: '20 % de descuento en tu próxima entrada' },
-  { visit: 8, title: 'Huella dorada', reward: 'Helecho dorado x3 + Medalla dorada', items: { fern: 3, coins: 300 } },
-  { visit: 10, title: 'Paleontólogo honorario', reward: 'Certificado y peluche oficial de Dino Park', items: { coins: 500 }, code: 'Peluche oficial + certificado de Paleontólogo honorario' }
+  { visit: 1, title: 'Primera huella', reward: '10 Dinoesferas y tu primer compañero', items: {}, prize: null },
+  { visit: 2, title: 'Rastro fresco', reward: 'Canchita gratis + huevo misterioso + 5 Dinoesferas. Aparece el Brachiosaurus.', items: { egg: 1, spheres: 5 }, prize: 'canchita' },
+  { visit: 3, title: 'Sello del Rey', reward: 'Juego gratis + 2 Superesferas. Se despierta el T. rex.', items: { coins: 150, super: 2 }, prize: 'juego' },
+  { visit: 5, title: 'Explorador fiel', reward: '20 % de descuento en tu próxima entrada + huevo', items: { coins: 250, egg: 1 }, prize: 'entrada20' },
+  { visit: 8, title: 'Huella dorada', reward: '2 Ultraesferas + 3 Helechos dorados', items: { fern: 3, ultra: 2, coins: 300 }, prize: null },
+  { visit: 10, title: 'Paleontólogo honorario', reward: 'Peluche oficial de Dino Park + certificado', items: { coins: 500 }, prize: 'peluche' }
 ];
 
 /* ---------------------------------------------------------------------
@@ -316,12 +306,67 @@ DC.PASSPORT = [
    --------------------------------------------------------------------- */
 DC.SHOP = [
   { id: 'sphere', name: 'Dinoesfera', desc: 'Un intento más de captura. Máx. 6 por visita.', price: 60, kind: 'item' },
+  { id: 'super', name: 'Superesfera', desc: 'Captura x1.6. Hecha de zafiro y plata.', price: 140, kind: 'item' },
+  { id: 'ultra', name: 'Ultraesfera', desc: 'Captura x2.4. Ideal para únicos y legendarios.', price: 300, kind: 'item' },
   { id: 'leaf', name: 'Hoja medicinal', desc: 'Cura el 60 % de la vida de un compañero.', price: 40, kind: 'item' },
-  { id: 'fern', name: 'Helecho dorado', desc: 'El próximo lanzamiento tiene x1.5 de captura.', price: 90, kind: 'item' },
-  { id: 'r_sticker', name: 'Sticker oficial DinoCaza', desc: 'Canjéalo en la caja del parque.', price: 400, kind: 'real' },
-  { id: 'r_photo', name: 'Foto impresa con dinosaurio', desc: 'Foto 10x15 en el punto de fotos.', price: 900, kind: 'real' },
-  { id: 'r_toy', name: 'Mini figura de dinosaurio', desc: 'En la tienda de recuerdos.', price: 1800, kind: 'real' }
+  { id: 'fern', name: 'Helecho dorado', desc: 'El próximo lanzamiento tiene x1.5 de captura.', price: 90, kind: 'item' }
 ];
+
+/* Premios reales que se canjean en el parque con un código + QR */
+DC.PRIZES = {
+  canchita: { id: 'canchita', name: 'Canchita gratis', desc: 'Una bolsa de canchita (popcorn) en la cafetería.', price: 350, color: '#ffcf3f', place: 'Cafetería' },
+  juego: { id: 'juego', name: 'Juego gratis', desc: 'Una partida gratis en los juegos del parque.', price: 700, color: '#3fb5ff', place: 'Zona de juegos' },
+  helado: { id: 'helado', name: 'Helado gratis', desc: 'Un helado por cada dinosaurio único capturado.', price: 0, color: '#ff8fb1', place: 'Heladería' },
+  peluche: { id: 'peluche', name: 'Peluche de dinosaurio', desc: 'Peluche oficial de Dino Park.', price: 2500, color: '#8f6bff', place: 'Tienda de recuerdos' },
+  sticker: { id: 'sticker', name: 'Sticker oficial', desc: 'Sticker de DinoCaza AR.', price: 300, color: '#2fae66', place: 'Caja' },
+  foto: { id: 'foto', name: 'Foto impresa', desc: 'Foto 10x15 con tu dinosaurio favorito.', price: 900, color: '#ff6f59', place: 'Punto de fotos' },
+  entrada20: { id: 'entrada20', name: '20 % en tu próxima entrada', desc: 'Descuento para volver al parque.', price: 0, color: '#2fae66', place: 'Boletería' },
+  entrada: { id: 'entrada', name: 'Entrada gratis', desc: 'Premio por completar el álbum.', price: 0, color: '#ffc531', place: 'Boletería' },
+  tienda10: { id: 'tienda10', name: '10 % en la tienda', desc: 'Descuento en la tienda de recuerdos.', price: 0, color: '#3fb5ff', place: 'Tienda de recuerdos' },
+  peluche_oro: { id: 'peluche_oro', name: 'Peluche dorado edición única', desc: 'Por capturar los 8 dinosaurios únicos.', price: 0, color: '#ffc531', place: 'Tienda de recuerdos' }
+};
+DC.PRIZE_SHOP = ['canchita', 'sticker', 'juego', 'foto', 'peluche'];
+
+/* Tipos de esfera */
+DC.BALLS = {
+  dino: { id: 'dino', name: 'Dinoesfera', mult: 1, top: '#ffb23d', mid: '#f08a12', bottom: '#3b2618', band: '#2a1a0f', glow: '#ffcf6a' },
+  super: { id: 'super', name: 'Superesfera', mult: 1.6, top: '#6fc7ff', mid: '#1f6fd6', bottom: '#d9e2ec', band: '#1b2b44', glow: '#9fe0ff' },
+  ultra: { id: 'ultra', name: 'Ultraesfera', mult: 2.4, top: '#ffd85a', mid: '#e0a300', bottom: '#1a1a1f', band: '#ffd85a', glow: '#fff0a8' }
+};
+
+/* Variantes de color (cualquier especie). chance = probabilidad por encuentro */
+DC.VARIANTS = {
+  normal: { id: 'normal', name: 'Normal', mult: 1 },
+  plata: { id: 'plata', name: 'Plateado', chance: 1 / 12, mult: 1.06, color: '#dfe6ee', lerp: 0.9, metal: 0.4, rough: 0.3, emissive: '#55606c', glow: 0.45, aura: '#eef6ff', coins: 1.5, capture: 0.9, chip: '#c9d3de' },
+  oro: { id: 'oro', name: 'Dorado', chance: 1 / 25, mult: 1.1, color: '#f2c14e', lerp: 0.9, metal: 0.4, rough: 0.32, emissive: '#7a4e00', glow: 0.6, aura: '#ffd45a', coins: 2, capture: 0.8, chip: '#ffc531' },
+  rubi: { id: 'rubi', name: 'Rubí', chance: 1 / 40, mult: 1.08, color: '#e0314f', lerp: 0.7, metal: 0.3, rough: 0.35, emissive: '#5a0010', glow: 0.45, aura: '#ff6b84', coins: 1.75, capture: 0.85, chip: '#ff5470' },
+  zafiro: { id: 'zafiro', name: 'Zafiro', chance: 1 / 40, mult: 1.08, color: '#2f6bff', lerp: 0.7, metal: 0.3, rough: 0.35, emissive: '#001a5a', glow: 0.45, aura: '#7fb0ff', coins: 1.75, capture: 0.85, chip: '#4a86ff' },
+  esmeralda: { id: 'esmeralda', name: 'Esmeralda', chance: 1 / 40, mult: 1.08, color: '#19c27a', lerp: 0.7, metal: 0.3, rough: 0.35, emissive: '#003a20', glow: 0.45, aura: '#7dffbe', coins: 1.75, capture: 0.85, chip: '#19c27a' },
+  amatista: { id: 'amatista', name: 'Amatista', chance: 1 / 40, mult: 1.08, color: '#9b5cff', lerp: 0.7, metal: 0.3, rough: 0.35, emissive: '#2a0060', glow: 0.45, aura: '#d3a8ff', coins: 1.75, capture: 0.85, chip: '#9b5cff' }
+};
+DC.VARIANT_ORDER = ['plata', 'oro', 'rubi', 'zafiro', 'esmeralda', 'amatista'];
+
+/* Dinosaurios únicos: uno de cada uno por jugador. Cada uno = helado gratis */
+DC.UNIQUES = [
+  { id: 'u_glaciar', sp: 'triceratops', name: 'Tricera Glaciar', zone: 1, color: '#9fe3ff', emissive: '#1a8fd0', glow: 0.7, aura: '#c9f2ff', lore: 'Tiene escarcha en los cuernos y deja huellas de hielo.' },
+  { id: 'u_coral', sp: 'parasaurolophus', name: 'Parasauro Coral', zone: 1, color: '#ff8fa3', emissive: '#c2185b', glow: 0.55, aura: '#ffc1d0', lore: 'Su cresta suena como un caracol marino.' },
+  { id: 'u_esmeralda', sp: 'stegosaurus', name: 'Stego Esmeralda', zone: 1, color: '#16b86d', emissive: '#00ff99', glow: 0.6, aura: '#7dffbe', lore: 'Sus placas brillan como gemas al atardecer.' },
+  { id: 'u_neon', sp: 'velociraptor', name: 'Raptor Neón', zone: 2, color: '#28e07c', emissive: '#00ff6a', glow: 0.9, aura: '#a6ffcc', lore: 'Sus plumas brillan en la oscuridad del bosque.' },
+  { id: 'u_abisal', sp: 'spinosaurus', name: 'Spino Abisal', zone: 3, color: '#1b3a8a', emissive: '#00d9ff', glow: 0.8, aura: '#5ff0ff', lore: 'Vive en lo más hondo de la laguna. Su vela emite luz.' },
+  { id: 'u_aurora', sp: 'pteranodon', name: 'Ptera Aurora', zone: 4, color: '#9b6bff', emissive: '#ff4fd8', glow: 0.75, aura: '#ffb0f0', lore: 'Sus alas cambian de color como una aurora.' },
+  { id: 'u_nube', sp: 'brachiosaurus', name: 'Brachio Nube', zone: 5, color: '#f2f6ff', emissive: '#8fc8ff', glow: 0.5, aura: '#ffffff', lore: 'Tan alto que su cabeza se pierde entre las nubes.' },
+  { id: 'u_volcan', sp: 'trex', name: 'Rex Volcán', zone: 5, color: '#3a1a12', emissive: '#ff4a10', glow: 1.0, aura: '#ff8a3d', lore: 'Nació en el cráter del Misti. Su piel brilla como lava.' }
+];
+DC.UNIQUE = {};
+DC.UNIQUES.forEach(function (u) { DC.UNIQUE[u.id] = u; });
+DC.UNIQUE_CHANCE = 0.08;
+/* Devuelve el aspecto visual de una variante o un único */
+DC.look = function (variant) {
+  if (!variant || variant === 'normal') return null;
+  var u = DC.UNIQUE[variant];
+  if (u) return { id: u.id, name: u.name, unique: true, mult: 1.15, color: u.color, lerp: 0.85, metal: 0.25, rough: 0.35, emissive: u.emissive, glow: u.glow, aura: u.aura, coins: 3, capture: 0.6, chip: u.color };
+  return DC.VARIANTS[variant] || null;
+};
 
 /* ---------------------------------------------------------------------
    Misiones diarias (se eligen 3 por visita)
@@ -351,8 +396,10 @@ DC.MEDALS = [
   { id: 'route3', name: 'Tres rutas', test: function (s) { return s.totals.routes >= 3; } },
   { id: 'all_types', name: 'Los 4 tipos', test: function (s) { var c = DC.Store.caughtTypes(); return c.length >= 4; } },
   { id: 'golden', name: 'Fósil dorado', test: function (s) { return s.totals.golden >= 1; } },
+  { id: 'uniques', name: 'Los 8 únicos', test: function (s) { return Object.keys(s.uniques || {}).length >= 8; } },
   { id: 'trex', name: 'Rey capturado', test: function (s) { return !!s.album.trex && s.album.trex.caught > 0; } },
-  { id: 'hard', name: 'Victoria difícil', test: function (s) { return s.totals.hardWins >= 1; } },
+  { id: 'unique1', name: 'Primer único', test: function (s) { return Object.keys(s.uniques || {}).length >= 1; } },
+  { id: 'variant', name: 'Coleccionista de colores', test: function (s) { return (s.totals.variants || 0) >= 3; } },
   { id: 'sabio', name: 'Pequeño sabio', test: function (s) { return s.totals.quiz >= 5; } },
   { id: 'album', name: 'Álbum completo', test: function (s) { return DC.Store.caughtCount() >= DC.SPECIES.length; } },
   { id: 'visit5', name: 'Cinco visitas', test: function (s) { return s.visits >= 5; } }

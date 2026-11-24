@@ -39,7 +39,7 @@ Abre `qr-zonas.html` (en tu dirección publicada), pega la URL pública y genera
 | **15 especies 3D** | Modelos procedurales con esqueleto y piel deformable (skinning): T. rex, Triceratops, Spinosaurus, Brachiosaurus, Velociraptor, Stegosaurus, Ankylosaurus, Parasaurolophus, Dilophosaurus, Baryonyx, Carnotaurus, Pteranodon, Quetzalcoatlus, Dimorphodon, Plesiosaurus. |
 | **Animaciones** | Respirar, mirar, caminar, rugir, preparar ataque, morder, recibir golpe, esquivar, ataque especial, agotarse, desmayarse, huir, aparecer desde el suelo, volar y nadar. Variante **dorada** (1 de 20; 1 de 12 al atardecer). |
 | **Peleas** | Tiempo real. Atacas tocando cuando el anillo coincide (crítico / bien / roce). El enemigo avisa con un **"!" rojo** y hay que esquivar en el último momento (esquiva perfecta = energía + contraataque). Ataque especial con energía. Tipos: Herbívoro > Carnívoro > Volador > Acuático > Herbívoro. |
-| **Dificultad** | Explorador (fácil), Rastreador (normal), Paleontólogo (difícil: combos, amagues, el enemigo esquiva la esfera, premios x1.75). |
+| **Dificultad** | Una sola, igual para todos: equilibrada para niños y adultos. |
 | **Captura** | Toque único (hallazgo E2) o deslizar hacia arriba. Calidad Bien / Genial / Excelente según el anillo, 3 sacudidas de la esfera, el dinosaurio puede escapar o huir. Helecho dorado x1.5. |
 | **Fichas educativas** | Texto niño / adulto (hallazgo E4), medidas reales, dato curioso, ventajas de tipo y pregunta con premio. |
 | **Recompensas** | XP y niveles con títulos, Dino-monedas, medallas, tienda de objetos y **premios reales** con código + QR validable en caja. |
@@ -58,6 +58,21 @@ T. rex, Triceratops, Velociraptor, Stegosaurus y Parasaurolophus usan los modelo
 4. Si la licencia es CC-BY, agrega el autor en `DC.MODEL_CREDIT`.
 
 La acción `.github/workflows/fetch-models.yml` vuelve a descargar los modelos de Quaternius si se borran (pestaña *Actions → Descargar modelos 3D → Run workflow*).
+
+### Dinosaurios especiales
+- **Colores:** cualquier especie puede salir **Plateada** (1 de 12), **Dorada** (1 de 25; casi el doble desde las 4 p. m.) o en gema: **Rubí, Zafiro, Esmeralda o Amatista** (1 de 40 cada una). Son más fuertes, brillan con un aura y dan más monedas.
+- **Únicos (8):** Tricera Glaciar, Parasauro Coral, Stego Esmeralda, Raptor Neón, Spino Abisal, Ptera Aurora, Brachio Nube y Rex Volcán. Cada jugador puede atrapar cada uno una sola vez y **cada uno da un helado gratis** (código QR para la heladería). Con los 8 se gana un peluche dorado.
+
+### Premios reales (código + QR validable en caja)
+Canchita gratis (ruta de 5 zonas o 350 monedas), juego gratis (3.ª visita o 700 monedas), helado (cada único), peluche (10.ª visita o 2500 monedas), sticker, foto impresa, 20 % en la entrada y entrada gratis (álbum completo).
+
+### Esferas
+Dinoesfera (x1), **Superesfera** (x1.6) y **Ultraesfera** (x2.4). Al acertar, la tapa se abre, el rayo atrapa al dinosaurio, se cierra y la esfera se sacude con el botón parpadeando.
+
+### Mapa 3D
+El inicio es una isla 3D con los 5 hábitats (valle, bosque, laguna, cumbre y volcán) y dinosaurios paseando. Se gira con el dedo y se toca un hábitat o su marcador para explorarlo.
+
+La dificultad es **la misma para todos** (equilibrada para niños y adultos).
 
 ## 3. Mecánicas para que la gente vuelva
 
@@ -82,6 +97,7 @@ js/audio.js           Sonidos sintetizados (sin archivos) y vibración
 js/models.js          Modelos 3D procedurales y animaciones
 js/fx.js              Partículas y efectos
 js/ar.js              Cámara, giroscopio, escena 3D, entorno, retratos
+js/map3d.js           Mapa 3D de la isla con los 5 hábitats
 js/ui.js              Pantallas: mapa, álbum, equipo, pasaporte, premios, ajustes, panel
 js/encounter.js       Encuentro, pelea, captura, QR y modo foto
 js/main.js            Arranque

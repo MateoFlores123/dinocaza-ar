@@ -46,7 +46,7 @@
   function hudBase() {
     $('#hud').innerHTML =
       '<div class="hud-top"><button class="icon-btn" data-h="leave" aria-label="Salir">' + icon('back') + '</button>' +
-      '<div class="plate" id="eplate" hidden></div>' +
+      '<div class="eplate" id="eplate" hidden></div>' +
       '<div class="hud-side"><button class="icon-btn" data-h="mode" aria-label="Cambiar entre cámara AR y parque 3D" id="modebtn">' + icon(DC.AR.mode === 'ar' ? 'cube' : 'camera') + '</button>' +
       '<button class="icon-btn" data-h="center" aria-label="Centrar vista">' + icon('target') + '</button></div></div>' +
       '<div class="passthru" id="fxl" style="position:absolute;inset:0"></div>' +
@@ -69,29 +69,35 @@
     fx.appendChild(d); setTimeout(function () { d.remove(); }, 1000);
   }
   function flashWhite() { var f = document.createElement('div'); f.className = 'flashwhite'; $('#fxl').appendChild(f); setTimeout(function () { f.remove(); }, 520); }
+  function enemyName(e) { return e.unique ? e.unique.name : e.sp.name; }
+  function variantChip(lk) {
+    if (!lk) return '';
+    return '<span class="vchip' + (lk.unique ? ' unique' : '') + '" style="--vc:' + lk.chip + '">' + (lk.unique ? '★ Único' : U().esc(lk.name)) + '</span>';
+  }
   function enemyPlate() {
     var e = st.enemy, el = $('#eplate'); if (!el || !e) return;
     var hp = U().pct(e.hp, e.max);
     el.hidden = false;
-    el.innerHTML = '<div class="nm"><span class="t">' + U().esc(e.sp.name) + '</span>' + (e.golden ? '<span class="stars">★</span>' : '') + U().typeChip(e.sp.type) + '</div>' +
-      '<div class="bar hp ' + U().hpClass(hp) + '"><i style="width:' + hp + '%"></i></div>' +
-      '<div class="sub"><span class="num">Nv. ' + e.lvl + ' · ' + DC.RARITY[e.sp.rarity].name + '</span><span class="num">' + Math.max(0, Math.ceil(e.hp)) + '/' + e.max + '</span></div>';
+    el.innerHTML = '<div class="ep-face">' + U().img(e.sp.id, '', '', e.variant) + '</div>' +
+      '<div class="ep-body"><div class="ep-name"><span class="t">' + U().esc(enemyName(e)) + '</span>' + variantChip(e.look) + '</div>' +
+      '<div class="ep-meta">' + U().typeChip(e.sp.type) + '<span class="num">Nv. ' + e.lvl + '</span>' + U().stars(e.sp.rarity) + '</div>' +
+      '<div class="hpbar ' + U().hpClass(hp) + '"><i style="width:' + hp + '%"></i><span class="num">' + Math.max(0, Math.ceil(e.hp)) + ' / ' + e.max + '</span></div></div>';
+    U().fillPortraits(el);
   }
   function meBar() {
     var m = st.me; if (!m) return '';
     var hp = U().pct(m.inst.hp, m.max);
-    return '<div class="plate" style="flex:none"><div class="nm"><span class="t">' + U().esc(m.sp.name) + '</span><span class="muted num" style="font-weight:800">Nv. ' + m.inst.lvl + '</span>' + U().typeChip(m.sp.type) + '</div>' +
-      '<div class="bar hp ' + U().hpClass(hp) + '" id="mehp"><i style="width:' + hp + '%"></i></div>' +
-      '<div class="energy-row"><span>ENERGÍA</span><div class="bar energy"><i id="mee" style="width:' + m.energy + '%"></i></div><span class="num" id="mehpt">' + Math.max(0, m.inst.hp) + '/' + m.max + '</span></div></div>';
+    return '<div class="mecard"><div class="ep-face">' + U().img(m.sp.id, '', '', m.inst.variant) + '</div><div class="ep-body">' +
+      '<div class="ep-name"><span class="t">' + U().esc(m.sp.name) + '</span><span class="num lv">Nv. ' + m.inst.lvl + '</span>' + U().typeChip(m.sp.type) + '</div>' +
+      '<div class="hpbar ' + U().hpClass(hp) + '" id="mehp"><i style="width:' + hp + '%"></i><span class="num" id="mehpt">' + Math.max(0, m.inst.hp) + ' / ' + m.max + '</span></div></div></div>';
   }
   function updateMe() {
     var m = st && st.me; if (!m) return;
-    var hp = U().pct(m.inst.hp, m.max), b = $('#mehp'), e = $('#mee'), t = $('#mehpt');
-    if (b) { b.className = 'bar hp ' + U().hpClass(hp); b.firstChild.style.width = hp + '%'; }
-    if (e) e.style.width = m.energy + '%';
-    if (t) t.textContent = Math.max(0, m.inst.hp) + '/' + m.max;
+    var hp = U().pct(m.inst.hp, m.max), b = $('#mehp'), t = $('#mehpt');
+    if (b) { b.className = 'hpbar ' + U().hpClass(hp); b.firstChild.style.width = hp + '%'; }
+    if (t) t.textContent = Math.max(0, m.inst.hp) + ' / ' + m.max;
     var sp = $('#btn-special');
-    if (sp) { var ready = m.energy >= 100; sp.disabled = !ready; sp.classList.toggle('ready', ready); }
+    if (sp) { var ready = m.energy >= 100; sp.disabled = !ready; sp.classList.toggle('ready', ready); sp.style.setProperty('--e', m.energy); }
   }
 
   /* ---------------- Inicio del encuentro ---------------- */
@@ -101,7 +107,7 @@
     st = { zone: zoneId, phase: 'scan', enemy: null, me: null, unsub: [], toasts: [], levelUps: [], rewards: [], appeared: false, outcome: null };
     showStage();
     hudBase();
-    $('#hb').innerHTML = '<div class="mini-acts"><button class="act" data-h="leave">' + icon('back') + 'Volver al mapa</button></div>';
+    $('#hb').innerHTML = '<div class="hud-pills"><button class="pillbtn" data-h="leave">' + icon('back') + 'Volver al mapa</button></div>';
     var sc = document.createElement('div'); sc.className = 'scan'; sc.id = 'scan'; $('#fxl').appendChild(sc);
     hint('Buscando huellas en ' + DC.ZONES[zoneId - 1].short + '…');
     st.unsub.push(DC.AR.onFrame(frame));
@@ -121,7 +127,7 @@
   function spawnRoll(roll) {
     var s = S();
     var sp = roll.sp;
-    var actor = new DC.Models.Actor(sp, { golden: roll.golden });
+    var actor = new DC.Models.Actor(sp, { variant: roll.variant });
     var spread = DC.AR.gyro.on ? 1.05 : 0.6;
     var th = (Math.random() * 2 - 1) * spread;
     var d = sp.id === 'brachiosaurus' ? 7.2 : sp.model.kind === 'ptero' ? 4.4 : 4.9;
@@ -130,8 +136,9 @@
     actor.faceTo(0, 0);
     actor.root.rotation.y += (th > 0 ? 1 : -1) * 0.55; /* de tres cuartos: se ve mejor la silueta */
     DC.AR.add(actor);
-    var stats = DC.Store.stats({ sp: sp.id, lvl: roll.lvl, golden: roll.golden });
-    st.enemy = { actor: actor, sp: sp, lvl: roll.lvl, golden: roll.golden, st: stats, hp: stats.maxHp, max: stats.maxHp, pos: new T.Vector3(x, 0, z), exhausted: false };
+    var stats = DC.Store.stats({ sp: sp.id, lvl: roll.lvl, variant: roll.variant });
+    var lk = DC.look(roll.variant);
+    st.enemy = { actor: actor, sp: sp, lvl: roll.lvl, variant: roll.variant, look: lk, unique: roll.unique, golden: roll.variant === 'oro', st: stats, hp: stats.maxHp, max: stats.maxHp, pos: new T.Vector3(x, 0, z), exhausted: false };
     st.phase = 'appear';
     var e = DC.Store.albumEntry(sp.id); e.seen++;
     s.totals.encounters++; DC.Store.bump('encounters');
@@ -142,7 +149,10 @@
     else if (sp.zone === 3) { DC.FX.ring(p, { color: '#7fe3ff', to: 4 }); DC.FX.burst(new T.Vector3(p.x, 0.2, p.z), { color: '#9feaff', count: 40, speed: 3, up: true, size: 0.16 }); DC.Audio.play('splash'); }
     else { DC.FX.crack(p, 2.8 + actor.radius); DC.FX.burst(new T.Vector3(p.x, 0.15, p.z), { color: '#c9a77a', count: 36, speed: 2.4, up: true, size: 0.3, additive: false, gravity: -3 }); }
     if (sp.zone === 2) DC.FX.leaves(p);
-    if (roll.golden) DC.FX.burst(new T.Vector3(p.x, 1, p.z), { tex: 'star', color: '#ffd45a', count: 30, speed: 3, size: 0.2 });
+    if (lk) {
+      DC.FX.burst(new T.Vector3(p.x, 1, p.z), { tex: 'star', color: lk.aura, count: lk.unique ? 60 : 30, speed: 3, size: 0.22 });
+      if (lk.unique) { DC.FX.ring(p, { color: lk.aura, to: 7, life: 1.2 }); DC.Audio.play('levelup'); }
+    }
     actor.play('spawn').then(function () { return actor.play('roar', { onPeak: function () { roarFx(actor); } }); });
     DC.Audio.vibe([30, 40, 60]);
     st.appearAt = performance.now();
@@ -159,22 +169,22 @@
     st.appeared = true;
     var e = st.enemy;
     hint('');
-    banner((e.golden ? '<span style="color:#ffd45a">¡Variante dorada!</span><br>' : '') + '¡' + U().esc(e.sp.name) + ' salvaje!<small>' + DC.RARITY[e.sp.rarity].name + ' · Nv. ' + e.lvl + '</small>', 1700);
+    if (e.unique) banner('<span style="color:' + e.look.aura + '">¡Dinosaurio único!</span><br>' + U().esc(e.unique.name) + '<small>Atrápalo y gana un helado gratis</small>', 2600);
+    else banner((e.look ? '<span style="color:' + e.look.aura + '">¡Variante ' + U().esc(e.look.name) + '!</span><br>' : '') + '¡' + U().esc(e.sp.name) + ' salvaje!<small>' + DC.RARITY[e.sp.rarity].name + ' · Nv. ' + e.lvl + '</small>', 1800);
     enemyPlate();
     menu();
   }
+  function ballsLeft() { var s = S(); return (s.spheres || 0) + (s.items.super || 0) + (s.items.ultra || 0); }
   function menu() {
     st.phase = 'menu';
-    var s = S();
-    var p = DC.Store.partner();
     var healthy = DC.Store.healthyTeam().length > 0;
+    var nb = ballsLeft();
     $('#hb').innerHTML =
-      '<div class="actions">' +
-      '<button class="act" data-h="leave">' + icon('run') + 'Huir</button>' +
-      '<button class="act main" data-h="fight"' + (healthy ? '' : ' disabled') + '>' + icon('claw') + 'Pelear</button>' +
-      '<button class="act" data-h="tocapture"' + (s.spheres > 0 ? '' : ' disabled') + '>' + icon('sphere') + 'Capturar</button></div>' +
-      (healthy ? '<p class="muted" style="text-align:center;font-size:.78rem;text-shadow:0 1px 4px #000">Pelear baja su vida y sube la probabilidad de captura. Tienes ' + s.spheres + ' Dinoesferas.</p>'
-        : '<p style="text-align:center;font-size:.8rem;color:#ffb39c;text-shadow:0 1px 4px #000">Tu equipo necesita descansar. Cúralo en Equipo o vuelve en tu próxima visita.</p>');
+      '<div class="menu-acts">' +
+      '<button class="bigbtn glass" data-h="leave">' + icon('run') + '<span>Huir</span></button>' +
+      '<button class="bigbtn green" data-h="fight"' + (healthy ? '' : ' disabled') + '>' + icon('claw') + '<span>Pelear</span></button>' +
+      '<button class="bigbtn sun" data-h="tocapture"' + (nb > 0 ? '' : ' disabled') + '>' + icon('sphere') + '<span>Capturar</span></button></div>' +
+      '<p class="hud-note">' + (healthy ? 'Pelear lo cansa y sube la probabilidad de captura · ' + nb + ' esferas' : 'Tu equipo necesita descansar: cúralo en Equipo o vuelve en tu próxima visita.') + '</p>';
   }
 
   /* =====================================================================
@@ -187,7 +197,7 @@
     if (!inst) return;
     if (st.me && st.me.actor) DC.AR.remove(st.me.actor);
     var sp = DC.SP[inst.sp];
-    var a = new DC.Models.Actor(sp, { golden: inst.golden });
+    var a = new DC.Models.Actor(sp, { variant: inst.variant });
     var e = st.enemy;
     var th = Math.atan2(e.pos.x, -e.pos.z);
     var side = th > 0.1 ? -1 : 1;
@@ -216,10 +226,10 @@
     }
     hint('');
     $('#hb').innerHTML = meBar() +
-      '<div class="actions"><button class="act" data-h="dodge" id="btn-dodge">' + icon('dodge') + 'Esquivar</button>' +
-      '<button class="act main" data-h="attack" id="btn-attack">' + icon('claw') + U().esc(sp.moves.basic) + '</button>' +
-      '<button class="act" data-h="special" id="btn-special" disabled>' + icon('flame') + 'Especial</button></div>' +
-      '<div class="mini-acts"><button class="act" data-h="leave">' + icon('run') + 'Huir</button><button class="act" data-h="tocapture"' + (S().spheres > 0 ? '' : ' disabled') + '>' + icon('sphere') + 'Dinoesfera (' + S().spheres + ')</button></div>';
+      '<div class="battle-acts"><button class="rb dodge" data-h="dodge" id="btn-dodge">' + icon('dodge') + '<span>Esquivar</span></button>' +
+      '<button class="rb attack" data-h="attack" id="btn-attack">' + icon('claw') + '<span>' + U().esc(sp.moves.basic) + '</span></button>' +
+      '<button class="rb special" data-h="special" id="btn-special" disabled style="--e:0">' + icon('flame') + '<span>Especial</span></button></div>' +
+      '<div class="hud-pills"><button class="pillbtn" data-h="leave">' + icon('run') + 'Huir</button><button class="pillbtn" data-h="tocapture"' + (ballsLeft() > 0 ? '' : ' disabled') + '>' + icon('sphere') + 'Capturar (' + ballsLeft() + ')</button></div>';
     var fx = $('#fxl');
     var rt = document.createElement('div'); rt.className = 'ring-target'; rt.id = 'ringT'; fx.appendChild(rt);
     var rm = document.createElement('div'); rm.className = 'ring-move'; rm.id = 'ringM'; fx.appendChild(rm);
@@ -234,7 +244,7 @@
     var base = (att.atk * 0.55 + 6) * (att.atk / (att.atk + def.def * 0.8));
     return Math.max(1, Math.round(base * DC.typeMult(at, dt) * q * (0.9 + Math.random() * 0.2)));
   }
-  function ringScale() { var period = 1.15 / DC.DIFFICULTY[S().difficulty].ringSpeed; var f = (st.ring % period) / period; return 2.0 - 1.5 * f; }
+  function ringScale() { var period = 1.15 / DC.DIFF.ringSpeed; var f = (st.ring % period) / period; return 2.0 - 1.5 * f; }
 
   function playerAttack() {
     var m = st.me, e = st.enemy;
@@ -271,7 +281,7 @@
     if (tm > 1) label += (label ? '<br>' : '') + 'súper eficaz';
     else if (tm < 1) label += (label ? '<br>' : '') + 'poco eficaz';
     floatText(chest.clone().add(new T.Vector3(0, 0.3, 0)), dmg + (label ? '<small>' + label + '</small>' : ''), qual === 'crit' || special ? 'crit' : '');
-    var interrupt = st.tele && (special || (qual === 'crit' && (S().difficulty !== 'dificil' || Math.random() < 0.5)));
+    var interrupt = st.tele && (special || qual === 'crit');
     if (interrupt) {
       st.tele = null; removeWarn();
       st.enemyTimer = 1.4 + Math.random();
@@ -317,7 +327,7 @@
 
   /* IA del enemigo: aviso (telegrafiado) → golpe */
   function enemyUpdate(dt) {
-    var e = st.enemy, m = st.me, d = DC.DIFFICULTY[S().difficulty];
+    var e = st.enemy, m = st.me, d = DC.DIFF;
     if (!m) return;
     if (st.tele) {
       st.tele.t += dt;
@@ -350,7 +360,7 @@
     }
   }
   function enemyImpact(tele) {
-    var m = st.me, e = st.enemy, d = DC.DIFFICULTY[S().difficulty];
+    var m = st.me, e = st.enemy, d = DC.DIFF;
     var dmg = damage(e.st, m.st, e.sp.type, m.sp.type, 1) * d.enemyDmg * 1.5;
     var chest = m.actor.chestWorld();
     if (tele.dodgeAt !== null) {
@@ -390,7 +400,7 @@
 
   /* ---------------- Ganar / perder ---------------- */
   function win() {
-    var s = S(), e = st.enemy, m = st.me, d = DC.DIFFICULTY[s.difficulty], R = DC.RARITY[e.sp.rarity];
+    var s = S(), e = st.enemy, m = st.me, d = DC.DIFF, R = DC.RARITY[e.sp.rarity];
     st.phase = 'exhausted';
     e.hp = 0; e.exhausted = true;
     st.tele = null; removeWarn(); clearRings();
@@ -399,15 +409,15 @@
     DC.Audio.play('win');
     banner('¡Ganaste!<small>' + U().esc(e.sp.name) + ' está agotado</small>', 1500);
     var lvlF = 1 + 0.05 * e.lvl;
-    var xp = Math.round(R.xp * lvlF * d.reward * (e.golden ? 1.5 : 1));
-    var coins = Math.round(R.coins * d.reward * (e.golden ? 2 : 1));
+    var vm = e.look ? e.look.coins : 1;
+    var xp = Math.round(R.xp * lvlF * d.reward * (e.look ? 1.5 : 1));
+    var coins = Math.round(R.coins * d.reward * vm);
     s.coins += coins;
     st.levelUps = st.levelUps.concat(DC.Store.addXp(xp));
     var dl = DC.Store.addDinoXp(m.inst, xp * 0.9);
     st.rewards.push(['Experiencia', '+' + xp + ' XP'], ['Dino-monedas', '+' + coins]);
     if (dl) st.rewards.push([m.sp.name + ' subió de nivel', 'Nv. ' + m.inst.lvl]);
     s.totals.wins++;
-    if (s.difficulty === 'dificil') s.totals.hardWins++;
     collect(DC.Store.bump('wins'));
     var eggP = 0.14 + R.stars * 0.05;
     if (Math.random() < eggP) { s.eggs.push({ id: DC.Store.uid(), laidVisit: s.visits }); st.rewards.push(['¡Huevo de dinosaurio!', 'Eclosiona en tu próxima visita']); }
@@ -428,9 +438,10 @@
     setTimeout(function () {
       if (!st) return;
       if (others.length) {
-        $('#hb').innerHTML = '<div class="plate" style="flex:none"><b>Elige otro dinosaurio para seguir</b><div class="row" style="flex-wrap:wrap;gap:8px;margin-top:8px">' +
-          others.slice(0, 4).map(function (o) { return '<button class="btn ghost small" data-h="swap" data-uid="' + o.uid + '">' + U().esc(DC.SP[o.sp].name) + ' · Nv. ' + o.lvl + '</button>'; }).join('') + '</div></div>' +
-          '<div class="mini-acts"><button class="act" data-h="leave">' + icon('run') + 'Retirarse</button></div>';
+        $('#hb').innerHTML = '<div class="glasscard"><b>Elige otro dinosaurio para seguir</b><div class="swap-row">' +
+          others.slice(0, 4).map(function (o) { return '<button class="swapbtn" data-h="swap" data-uid="' + o.uid + '">' + U().img(o.sp, '', '', o.variant) + '<span>' + U().esc(DC.SP[o.sp].name) + '</span><small class="num">Nv. ' + o.lvl + '</small></button>'; }).join('') + '</div></div>' +
+          '<div class="hud-pills"><button class="pillbtn" data-h="leave">' + icon('run') + 'Retirarse</button></div>';
+        U().fillPortraits($('#hb'));
       } else {
         var e = st.enemy;
         e.actor.play('roar', { onPeak: function () { roarFx(e.actor); } }).then(function () { return flee(); }).then(function () { finish('lost'); });
@@ -441,30 +452,43 @@
   /* =====================================================================
      CAPTURA
      ===================================================================== */
-  function chance(fern) {
-    var s = S(), e = st.enemy, R = DC.RARITY[e.sp.rarity], d = DC.DIFFICULTY[s.difficulty];
+  function ballCount(t) { var s = S(); return t === 'dino' ? s.spheres : (s.items[t] || 0); }
+  function chance(fern, ballType) {
+    var e = st.enemy, R = DC.RARITY[e.sp.rarity], d = DC.DIFF;
     var hpF = 1 + 1.8 * (1 - Math.max(0, e.hp) / e.max);
-    return Math.min(0.95, R.capture * hpF * d.capture * (fern ? 1.5 : 1));
+    var vm = e.look ? e.look.capture : 1;
+    var bm = DC.BALLS[ballType || 'dino'].mult;
+    return Math.min(0.96, R.capture * hpF * d.capture * vm * bm * (fern ? 1.5 : 1));
   }
   function toCapture() {
     var s = S();
     st.phase = 'capture';
     st.useFern = st.useFern && s.items.fern > 0;
+    if (!st.ball || ballCount(st.ball) <= 0) st.ball = ['dino', 'super', 'ultra'].find(function (t) { return ballCount(t) > 0; }) || 'dino';
     clearRings();
     if (!DC.AR.gyro.on) DC.AR.lookTowards(st.enemy.pos, -0.12);
-    var c = Math.round(chance(st.useFern) * 100);
+    var c = Math.round(chance(st.useFern, st.ball) * 100);
     var color = c >= 50 ? 'green' : c >= 25 ? 'yellow' : 'red';
-    var canBuy = s.spheres <= 0 && s.coins >= 60 && s.visit.bought < DC.SPHERE_BUY_LIMIT;
+    var n = ballCount(st.ball);
+    var canBuy = ballsLeft() <= 0 && s.coins >= 60 && s.visit.bought < DC.SPHERE_BUY_LIMIT;
+    var picker = ['dino', 'super', 'ultra'].map(function (t) {
+      var k = ballCount(t), B = DC.BALLS[t];
+      return '<button class="ballpick' + (st.ball === t ? ' on' : '') + '" data-h="pickball" data-t="' + t + '"' + (k > 0 ? '' : ' disabled') + ' aria-pressed="' + (st.ball === t) + '">' +
+        '<i class="ball-ico ' + t + '"></i><span>' + B.name.replace('esfera', '') + '</span><b class="num">' + k + '</b></button>';
+    }).join('');
     $('#hb').innerHTML =
-      '<div class="throw-zone"><span class="chance" id="chance">Probabilidad: <span style="color:' + (color === 'green' ? '#7cff7a' : color === 'yellow' ? '#ffe25a' : '#ff8a6a') + '">' + c + '%</span>' + (st.enemy.exhausted ? ' · agotado' : '') + '</span>' +
-      '<button class="throw-ball" id="ball" aria-label="Lanzar Dinoesfera"' + (s.spheres > 0 ? '' : ' disabled') + '><span class="count num">' + s.spheres + '</span></button>' +
-      '<div class="row" style="gap:8px;flex-wrap:wrap;justify-content:center">' +
-      (s.items.fern > 0 ? '<button class="act fern-toggle" style="min-height:38px;padding:0 12px;flex-direction:row" data-h="fern" aria-pressed="' + !!st.useFern + '">' + icon('leaf') + 'Helecho dorado (' + s.items.fern + ')</button>' : '') +
-      (canBuy ? '<button class="act" style="min-height:38px;padding:0 12px;flex-direction:row" data-h="buyball">' + icon('coin') + 'Comprar 1 (60)</button>' : '') +
-      '</div></div>' +
-      '<div class="mini-acts">' + (st.enemy.exhausted ? '<button class="act" data-h="letgo">' + icon('run') + 'Dejarlo ir</button>'
-        : '<button class="act" data-h="leave">' + icon('run') + 'Huir</button>' + (DC.Store.healthyTeam().length ? '<button class="act" data-h="fight">' + icon('claw') + 'Pelear</button>' : '')) + '</div>';
-    hint(s.spheres > 0 ? 'Toca la Dinoesfera cuando el anillo esté pequeño' : 'Te quedaste sin Dinoesferas');
+      '<div class="cap-panel">' +
+      '<p class="hud-note">' + (n > 0 ? 'Lanza cuando el anillo esté pequeño · toca o desliza hacia arriba' : 'Te quedaste sin esferas') + '</p>' +
+      '<div class="chance-meter ' + color + '"><span>Probabilidad</span><div class="cm-track"><i style="width:' + c + '%"></i></div><b class="num">' + c + '%</b></div>' +
+      '<div class="ball-row">' + picker + '</div>' +
+      '<button class="throw-ball ' + st.ball + '" id="ball" aria-label="Lanzar ' + DC.BALLS[st.ball].name + '"' + (n > 0 ? '' : ' disabled') + '><span class="shine"></span><span class="count num">' + n + '</span></button>' +
+      '<div class="hud-pills">' +
+      (s.items.fern > 0 ? '<button class="pillbtn fern" data-h="fern" aria-pressed="' + !!st.useFern + '">' + icon('leaf') + 'Helecho (' + s.items.fern + ')</button>' : '') +
+      (canBuy ? '<button class="pillbtn" data-h="buyball">' + icon('coin') + 'Comprar 1 · 60</button>' : '') +
+      (st.enemy.exhausted ? '<button class="pillbtn" data-h="letgo">' + icon('run') + 'Dejarlo ir</button>'
+        : '<button class="pillbtn" data-h="leave">' + icon('run') + 'Huir</button>' + (DC.Store.healthyTeam().length ? '<button class="pillbtn" data-h="fight">' + icon('claw') + 'Pelear</button>' : '')) +
+      '</div></div>';
+    hint('');
     var rm = document.createElement('div'); rm.className = 'ring-move capture-' + color; rm.id = 'ringC'; $('#fxl').appendChild(rm);
     st.cring = 0;
     bindBall();
@@ -481,13 +505,14 @@
     });
     b.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); throwSphere({ swipe: false }); } });
   }
-  function captureRingScale() { var period = 1.3 / DC.DIFFICULTY[S().difficulty].ringSpeed; var f = (st.cring % period) / period; return 1 - 0.75 * f; }
+  function captureRingScale() { var period = 1.3 / DC.DIFF.ringSpeed; var f = (st.cring % period) / period; return 1 - 0.75 * f; }
 
   function throwSphere(o) {
-    var s = S(), e = st.enemy;
-    if (st.phase !== 'capture' || s.spheres <= 0 || st.throwing) return;
+    var s = S(), e = st.enemy, type = st.ball || 'dino';
+    if (st.phase !== 'capture' || ballCount(type) <= 0 || st.throwing) return;
     st.throwing = true;
-    s.spheres--; s.totals.throws++; DC.Store.bump('throws');
+    if (type === 'dino') s.spheres--; else s.items[type]--;
+    s.totals.throws++; DC.Store.bump('throws');
     DC.Store.save(); U().renderTop();
     var sc = captureRingScale();
     var qual = sc < 0.45 ? 'Excelente' : sc < 0.72 ? 'Genial' : 'Bien';
@@ -496,22 +521,24 @@
     if (qual === 'Excelente') { DC.Store.bump('excellent'); s.totals.excellent++; }
     var useFern = st.useFern && s.items.fern > 0;
     if (useFern) { s.items.fern--; st.useFern = false; }
-    var p = Math.min(0.97, chance(useFern) * qm);
+    var p = Math.min(0.97, chance(useFern, type) * qm);
     $('#hb').innerHTML = ''; hint(''); var rc = $('#ringC'); if (rc) rc.remove();
-    var sphere = DC.Models.makeSphere();
+    var sphere = DC.Models.makeSphere(type), ud = sphere.userData, B = ud.ball;
     var cam = DC.AR.camera;
     var from = cam.localToWorld(new T.Vector3(0, -0.42, -0.65));
     var to = e.actor.chestWorld();
-    var dodge = !e.exhausted && s.difficulty === 'dificil' && Math.random() < 0.15;
+    var dodge = !e.exhausted && e.unique && Math.random() < 0.15;
     sphere.position.copy(from);
     DC.AR.scene.add(sphere);
     DC.Audio.play('whoosh');
     var side = o.swipe ? Math.max(-1, Math.min(1, (o.dx || 0) / 120)) : 0;
+    var trailT = 0;
     DC.tween(0.62, function (u) {
       sphere.position.lerpVectors(from, to, u);
       sphere.position.y += Math.sin(Math.PI * u) * 0.9;
       sphere.position.x += Math.sin(Math.PI * u) * side * 0.6;
-      sphere.rotation.x -= 0.4; sphere.rotation.z += 0.15 * side;
+      sphere.rotation.x -= 0.45; sphere.rotation.z += 0.15 * side;
+      if (u - trailT > 0.06) { trailT = u; DC.FX.burst(sphere.position, { color: B.glow, count: 3, speed: 0.3, size: 0.1, gravity: 0, life: 0.4 }); }
     }, 'linear').then(function () {
       if (dodge) {
         e.actor.play('dodge', { dir: 1 });
@@ -521,13 +548,22 @@
         });
       }
       floatText(to.clone().add(new T.Vector3(0, 0.5, 0)), qual + (o.swipe ? '<small>con impulso</small>' : ''), qual === 'Excelente' ? 'crit' : '');
-      DC.FX.burst(to, { color: '#ffb84a', count: 26, speed: 2.5, size: 0.16 });
+      /* la esfera mira al dinosaurio y abre la tapa */
+      sphere.rotation.set(0, Math.atan2(to.x - from.x, to.z - from.z) + Math.PI, 0);
+      DC.tween(0.18, function (u) { ud.lid.rotation.x = -1.25 * u; }, 'out');
+      DC.FX.burst(to, { color: B.glow, count: 30, speed: 2.6, size: 0.16 });
       flashWhite();
       DC.Audio.play('beam');
-      DC.FX.beam(to.clone().add(new T.Vector3(0, 0.6, 0)), to.clone().sub(new T.Vector3(0, 0.4, 0)), '#ffcf6a');
-      e.actor.play('shrink').then(function () { e.actor.root.visible = false; });
+      DC.FX.beam(sphere.position.clone(), e.actor.chestWorld(), B.glow);
+      var start = e.actor.root.position.clone();
+      e.actor.play('shrink').then(function () { e.actor.root.visible = false; e.actor.root.position.copy(start); });
+      DC.tween(0.55, function (u) { e.actor.root.position.lerpVectors(start, new T.Vector3(sphere.position.x, 0, sphere.position.z), u * 0.85); }, 'in');
       var groundY = 0.11;
-      return DC.wait(0.45).then(function () {
+      return DC.wait(0.55).then(function () {
+        DC.Audio.play('click');
+        DC.FX.burst(sphere.position, { tex: 'star', color: '#ffffff', count: 10, speed: 1.4, size: 0.08 });
+        return DC.tween(0.12, function (u) { ud.lid.rotation.x = -1.25 * (1 - u); }, 'in');
+      }).then(function () {
         return DC.tween(0.5, function (u) {
           var b = Math.abs(Math.cos(u * Math.PI * 1.5)) * (1 - u);
           sphere.position.y = groundY + (to.y - groundY) * (1 - u) * (1 - u) + b * 0.25;
@@ -536,12 +572,14 @@
         sphere.rotation.set(0, Math.atan2(-sphere.position.x, -sphere.position.z) + Math.PI, 0);
         var each = Math.pow(p, 1 / 3), i = 0;
         function shake() {
-          return DC.tween(0.55, function (u) { sphere.rotation.z = Math.sin(u * Math.PI * 3) * 0.45 * (1 - u); }, 'linear').then(function () {
+          ud.btnMat.emissive.set('#ff3b30');
+          return DC.tween(0.55, function (u) { sphere.rotation.z = Math.sin(u * Math.PI * 3) * 0.45 * (1 - u); ud.btnMat.emissiveIntensity = 0.6 + Math.abs(Math.sin(u * Math.PI * 3)) * 1.6; }, 'linear').then(function () {
+            ud.btnMat.emissive.set(B.glow);
             DC.Audio.play('click');
             var ok = Math.random() < each;
             if (!ok) return false;
             i++;
-            DC.FX.burst(sphere.position, { color: '#ffd27a', count: 6, speed: 1, size: 0.08 });
+            DC.FX.burst(sphere.position, { color: B.glow, count: 6, speed: 1, size: 0.08 });
             return i >= 3 ? true : DC.wait(0.25).then(shake);
           });
         }
@@ -550,9 +588,10 @@
         st.throwing = false;
         if (ok) captured(sphere);
         else {
-          DC.FX.burst(sphere.position, { color: '#ffb84a', count: 30, speed: 3, size: 0.18 });
+          DC.tween(0.15, function (u) { ud.lid.rotation.x = -1.4 * u; }, 'out');
+          DC.FX.burst(sphere.position, { color: B.glow, count: 34, speed: 3.2, size: 0.18 });
           DC.Audio.play('fail');
-          DC.AR.scene.remove(sphere);
+          setTimeout(function () { DC.AR.scene.remove(sphere); }, 250);
           e.actor.root.visible = true;
           e.actor.play('grow').then(function () {
             if (e.exhausted) return e.actor.play('kneel');
@@ -571,34 +610,44 @@
       banner('¡' + U().esc(e.sp.name) + ' huyó!', 1400);
       S().totals.flees++;
       flee().then(function () { finish('escaped'); });
-    } else if (S().spheres <= 0 && !(S().coins >= 60 && S().visit.bought < DC.SPHERE_BUY_LIMIT)) {
+    } else if (ballsLeft() <= 0 && !(S().coins >= 60 && S().visit.bought < DC.SPHERE_BUY_LIMIT)) {
       toCapture();
       hint('Sin Dinoesferas: compra más en Premios o vuelve en tu próxima visita');
     } else toCapture();
   }
   function captured(sphere) {
-    var s = S(), e = st.enemy, d = DC.DIFFICULTY[s.difficulty], R = DC.RARITY[e.sp.rarity];
+    var s = S(), e = st.enemy, d = DC.DIFF, R = DC.RARITY[e.sp.rarity];
     st.phase = 'done';
     DC.Audio.play('capture');
     DC.Audio.vibe([40, 60, 120]);
-    DC.FX.burst(sphere.position.clone().add(new T.Vector3(0, 0.2, 0)), { tex: 'star', color: '#ffd45a', count: 40, speed: 3, size: 0.2 });
-    sphere.userData.btn.material.emissiveIntensity = 2;
-    banner('¡Capturado!<small>' + U().esc(e.sp.name) + (e.golden ? ' dorado' : '') + '</small>', 1600);
-    var inst = DC.Store.makeInst(e.sp.id, e.lvl, e.golden);
+    var ud = sphere.userData;
+    ud.btnMat.emissive.set('#3dff7a'); ud.btnMat.emissiveIntensity = 2.4;
+    DC.FX.burst(sphere.position.clone().add(new T.Vector3(0, 0.2, 0)), { tex: 'star', color: e.look ? e.look.aura : '#ffd45a', count: 44, speed: 3, size: 0.2 });
+    DC.FX.ring(sphere.position, { color: '#ffffff', to: 2.2 });
+    banner('¡Capturado!<small>' + U().esc(enemyName(e)) + (e.look && !e.unique ? ' · ' + U().esc(e.look.name) : '') + '</small>', 1600);
+    var inst = DC.Store.makeInst(e.sp.id, e.lvl, e.variant);
     DC.Store.addToTeam(inst);
     var a = DC.Store.albumEntry(e.sp.id);
     var isNew = a.caught === 0;
     a.caught++; if (!a.first) a.first = Date.now();
-    if (e.golden) { a.golden++; s.totals.golden++; }
+    DC.Store.noteVariant(e.sp.id, e.variant);
     s.totals.caps++;
     collect(DC.Store.bump('caps'));
     collect(DC.Store.bump('cap_' + e.sp.type));
-    var xp = Math.round(R.xp * 0.8 * d.reward * (isNew ? 1.5 : 1));
-    var coins = Math.round(R.coins * 0.6 * d.reward);
+    var vm = e.look ? e.look.coins : 1;
+    var xp = Math.round(R.xp * 0.8 * d.reward * (isNew ? 1.5 : 1) * (e.look ? 1.4 : 1));
+    var coins = Math.round(R.coins * 0.6 * d.reward * vm);
     s.coins += coins;
     st.levelUps = st.levelUps.concat(DC.Store.addXp(xp));
     st.rewards.push(['Captura' + (isNew ? ' (nueva especie)' : ''), '+' + xp + ' XP'], ['Dino-monedas', '+' + coins]);
+    if (e.look && !e.unique) st.rewards.push(['Variante ' + e.look.name, 'monedas x' + vm]);
     if (isNew) st.rewards.push(['Ficha desbloqueada', DC.Store.caughtCount() + '/' + DC.SPECIES.length]);
+    st.prizes = st.prizes || [];
+    if (e.unique) {
+      var code = DC.Store.captureUnique(e.unique.id);
+      if (code) { st.rewards.push(['¡Helado gratis!', 'Código en Premios']); st.prizes.push(code); }
+    }
+    DC.Store.checkCollections().forEach(function (c) { st.rewards.push(['¡Colección completa!', c.label]); st.prizes.push(c); });
     st.captured = inst;
     DC.Store.save(); U().renderTop();
     setTimeout(function () {
@@ -639,14 +688,15 @@
     }[outcome] || '';
     if (zr.first) st.rewards.push(['Zona explorada', s.visit.zones.length + '/5']);
     if (zr.route) st.rewards.push(['¡Ruta del tesoro completa!', '+150 monedas y código']);
-    var rw = st.rewards.map(function (r) { return '<div><span>' + U().esc(r[0]) + '</span><span class="num" style="color:var(--amber)">' + U().esc(r[1]) + '</span></div>'; }).join('');
+    var rw = st.rewards.map(function (r) { return '<li><span>' + U().esc(r[0]) + '</span><b class="num">' + U().esc(r[1]) + '</b></li>'; }).join('');
     var wrap = document.createElement('div');
-    wrap.className = 'result';
-    wrap.innerHTML = '<div class="sheet" style="max-width:520px"><div class="row" style="gap:14px">' +
-      U().img(e.sp.id, outcome === 'captured' ? (e.golden ? 'golden-img' : '') : '', e.sp.name).replace('<img', '<img style="width:84px;height:84px;border-radius:16px;background:radial-gradient(circle at 50% 60%,#2a4a3b,#13241e)"') +
-      '<div><div class="eyebrow">' + U().esc(DC.ZONES[st.zone - 1].name) + '</div><h2>' + title + '</h2><p class="muted" style="font-size:.85rem">' + U().esc(sub) + '</p></div></div>' +
-      (rw ? '<div class="reward-list" style="margin:14px 0">' + rw + '</div>' : '<div style="height:14px"></div>') +
-      '<div class="stack" style="gap:10px">' +
+    wrap.className = 'result ' + outcome;
+    var nm = enemyName(e);
+    wrap.innerHTML = '<div class="result-card">' +
+      '<div class="result-hero' + (e.unique ? ' unique' : '') + '" style="' + (e.look ? '--vc:' + e.look.chip : '') + '">' + U().img(e.sp.id, '', nm, outcome === 'captured' ? e.variant : 'normal') + '</div>' +
+      '<div class="eyebrow">' + U().esc(DC.ZONES[st.zone - 1].name) + '</div><h2>' + title + '</h2><p class="muted">' + U().esc(outcome === 'captured' ? nm + ' se unió a tu equipo.' : sub) + '</p>' +
+      (rw ? '<ul class="reward-list">' + rw + '</ul>' : '') +
+      '<div class="stack">' +
       (outcome === 'captured' ? '<button class="btn block" data-h="seeficha">' + icon('book') + 'Ver ficha y responder pregunta</button>' : '') +
       '<button class="btn ' + (outcome === 'captured' ? 'ghost ' : '') + 'block" data-h="tomap">Volver al mapa</button></div></div>';
     $('#hud').appendChild(wrap);
@@ -664,14 +714,14 @@
     if (res.route) {
       chain = chain.then(function () {
         return new Promise(function (r) {
-          var c = S().codes[0];
-          DC.Audio.play('levelup');
-          U().modal('<div class="stack" style="text-align:center"><div class="eyebrow">Ruta del tesoro</div><h1>¡Recorriste las 5 zonas!</h1>' +
-            '<p>Ganaste un premio para canjear en el parque:</p><div class="card"><b>' + U().esc(c.label) + '</b><div class="mono" style="color:var(--amber);font-size:1.3rem;margin-top:4px">' + c.code + '</div></div>' +
-            '<p class="muted" style="font-size:.85rem">Lo encuentras en Premios con su código QR.</p><button class="btn block" data-act="close">¡Genial!</button></div>', { center: true, onClose: r });
+          var c = S().codes.find(function (x) { return x.prize === 'canchita'; }) || S().codes[0];
+          U().prizeModal(c, r, '¡Recorriste las 5 zonas!');
         });
       });
     }
+    (res.prizes || []).forEach(function (c) {
+      chain = chain.then(function () { return new Promise(function (r) { U().prizeModal(c, r); }); });
+    });
     if (res.levelUps.length) chain = chain.then(function () { return new Promise(function (r) { var m = U().levelUp(res.levelUps[res.levelUps.length - 1]); var mods = document.querySelectorAll('#overlay .modal-back'); var last = mods[mods.length - 1]; var obs = new MutationObserver(function () { if (!last.isConnected) { obs.disconnect(); r(); } }); obs.observe(document.getElementById('overlay'), { childList: true }); }); });
     if (openFicha && res.captured) chain.then(function () { U().ficha(res.captured.sp, true); });
   }
@@ -686,6 +736,16 @@
   function frame(dt) {
     if (!st) return;
     var e = st.enemy;
+    /* aura de variantes y únicos */
+    if (e && e.look && e.actor.root.visible && st.phase !== 'result') {
+      st.auraT = (st.auraT || 0) + dt;
+      if (st.auraT > (e.unique ? 0.12 : 0.22)) {
+        st.auraT = 0;
+        var ap = e.actor.root.position, hh = e.actor.height;
+        DC.FX.burst(new T.Vector3(ap.x + (Math.random() - 0.5) * e.actor.radius * 1.6, 0.2 + Math.random() * hh, ap.z + (Math.random() - 0.5) * e.actor.radius * 1.6),
+          { tex: 'star', color: e.look.aura, count: e.unique ? 3 : 2, speed: 0.4, size: 0.09, gravity: 0.6, life: 0.9 });
+      }
+    }
     /* flecha guía hacia el dinosaurio */
     var g = $('#guide');
     if (e && g && e.actor.root.visible && st.phase !== 'result') {
@@ -733,7 +793,7 @@
       if (wn && e) {
         var hp = DC.AR.project(e.actor.root.localToWorld(new T.Vector3(0, e.actor.height + 0.25, 0)));
         wn.style.left = hp.x + 'px'; wn.style.top = Math.max(70, hp.y) + 'px';
-        if (st.tele) { var k = st.tele.t / st.tele.dur; wn.style.background = k > 1 - DC.DIFFICULTY[S().difficulty].dodgeWin / st.tele.dur ? '#ffd45a' : ''; wn.style.color = k > 1 - DC.DIFFICULTY[S().difficulty].dodgeWin / st.tele.dur ? '#2a1704' : ''; }
+        if (st.tele) { var k = st.tele.t / st.tele.dur; wn.style.background = k > 1 - DC.DIFF.dodgeWin / st.tele.dur ? '#ffd45a' : ''; wn.style.color = k > 1 - DC.DIFF.dodgeWin / st.tele.dur ? '#2a1704' : ''; }
       }
     }
     if (st.phase === 'capture') {
@@ -789,9 +849,10 @@
       case 'dodge': playerDodge(); break;
       case 'special': playerSpecial(); break;
       case 'fern': st.useFern = !st.useFern; toCapture(); break;
+      case 'pickball': st.ball = b.dataset.t; DC.Audio.play('tap'); toCapture(); break;
       case 'buyball':
         var s = S();
-        if (s.coins >= 60 && s.visit.bought < DC.SPHERE_BUY_LIMIT) { s.coins -= 60; s.spheres++; s.visit.bought++; DC.Store.save(); U().renderTop(); DC.Audio.play('coin'); toCapture(); }
+        if (s.coins >= 60 && s.visit.bought < DC.SPHERE_BUY_LIMIT) { s.coins -= 60; s.spheres++; s.visit.bought++; st.ball = 'dino'; DC.Store.save(); U().renderTop(); DC.Audio.play('coin'); toCapture(); }
         break;
       case 'letgo': finish('won'); break;
       case 'seeficha': endToMap(true); break;
@@ -819,14 +880,14 @@
     if (st) cleanup();
     st = { photo: false, qr: true, unsub: [], toasts: [], rewards: [], levelUps: [] };
     showStage(); hudBase();
-    $('#hb').innerHTML = '<div class="plate" style="flex:none;text-align:center"><b>Apunta al código QR de ' + U().esc(DC.ZONES[zone - 1].name) + '</b><div class="muted" style="font-size:.8rem">Está en el letrero de la zona.</div></div>' +
-      '<div class="mini-acts"><button class="act" data-h="leave">' + icon('back') + 'Cancelar</button></div>';
+    $('#hb').innerHTML = '<div class="glasscard" style="text-align:center"><b>Apunta al código QR de ' + U().esc(DC.ZONES[zone - 1].name) + '</b><div class="muted">Está en el letrero de la zona.</div></div>' +
+      '<div class="hud-pills"><button class="pillbtn" data-h="leave">' + icon('back') + 'Cancelar</button></div>';
     var myst = st;
     DC.AR.startCamera().then(function (ok) {
       if (!ok) { U().toast('Necesitas permitir la cámara para leer el QR', 'camera'); return; }
       if (!('BarcodeDetector' in window)) {
-        $('#hb').innerHTML = '<div class="plate" style="flex:none"><b>Tu navegador no lee QR dentro de la app.</b><div class="muted" style="font-size:.82rem">Abre la cámara normal del celular y escanea el QR de la zona: te traerá aquí con la zona validada.</div></div>' +
-          '<div class="mini-acts"><button class="act" data-h="leave">' + icon('back') + 'Volver</button></div>';
+        $('#hb').innerHTML = '<div class="glasscard"><b>Tu navegador no lee QR dentro de la app.</b><div class="muted">Abre la cámara normal del celular y escanea el QR de la zona: te traerá aquí con la zona validada.</div></div>' +
+          '<div class="hud-pills"><button class="pillbtn" data-h="leave">' + icon('back') + 'Volver</button></div>';
         return;
       }
       var det = new window.BarcodeDetector({ formats: ['qr_code'] });
@@ -850,14 +911,14 @@
     st = { photo: true, unsub: [], toasts: [], rewards: [], levelUps: [] };
     showStage(); hudBase();
     var sp = DC.SP[spId];
-    var a = new DC.Models.Actor(sp, { golden: inst ? inst.golden : false });
+    var a = new DC.Models.Actor(sp, { variant: inst ? inst.variant : 'normal' });
     a.root.position.set(0, 0, sp.id === 'brachiosaurus' ? -6 : -3.6);
     a.faceTo(0.6, 0);
     DC.AR.add(a);
     st.photoActor = a;
-    $('#hb').innerHTML = '<div class="actions"><button class="act" data-h="closephoto">' + icon('back') + 'Salir</button>' +
-      '<button class="act main" data-h="shutter">' + icon('camera') + 'Foto</button>' +
-      '<button class="act" data-h="roarbtn">' + icon('sound') + 'Rugir</button></div>';
+    $('#hb').innerHTML = '<div class="battle-acts"><button class="rb dodge" data-h="closephoto">' + icon('back') + '<span>Salir</span></button>' +
+      '<button class="rb attack" data-h="shutter">' + icon('camera') + '<span>Foto</span></button>' +
+      '<button class="rb special ready" data-h="roarbtn" style="--e:100">' + icon('sound') + '<span>Rugir</span></button></div>';
     prepareView().then(function () {
       hint(DC.AR.mode === 'ar' ? 'Ponte al lado de tu ' + sp.name + ' y toma la foto' : 'Desliza para encuadrar');
       a.play('roar', { onPeak: function () { roarFx(a); } });

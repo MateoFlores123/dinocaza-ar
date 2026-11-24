@@ -423,9 +423,10 @@
      Retratos 3D para el álbum (renderer pequeño aparte)
      ===================================================================== */
   var pr = null, prScene = null, prCam = null, cache = {};
-  var PKEY = 'dinocaza_portrait_v5_';
-  DC.portrait = function (spId) {
-    var key = spId + (DC.GLB.get(spId) ? '_glb' : '');
+  var PKEY = 'dinocaza_portrait_v6_';
+  DC.portrait = function (spId, variant) {
+    variant = variant && variant !== 'normal' ? variant : '';
+    var key = spId + (DC.GLB.get(spId) ? '_glb' : '') + (variant ? '_' + variant : '');
     if (cache[key]) return cache[key];
     try { var saved = localStorage.getItem(PKEY + key); if (saved) { cache[key] = saved; return saved; } } catch (e) {}
     if (!pr) {
@@ -436,7 +437,7 @@
       var dl = new T.DirectionalLight('#ffffff', 1.1); dl.position.set(2, 4, 3); prScene.add(dl);
       prCam = new T.PerspectiveCamera(30, 1, 0.05, 100);
     }
-    var a = new DC.Models.Actor(DC.SP[spId]);
+    var a = new DC.Models.Actor(DC.SP[spId], { variant: variant || 'normal' });
     a.root.rotation.y = 0.75;
     prScene.add(a.root);
     for (var i = 0; i < 4; i++) a.update(0.02);

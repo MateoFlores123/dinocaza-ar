@@ -1,7 +1,7 @@
 /* DinoCaza AR · service worker: modo sin internet para zonas con poca señal */
-var CACHE = 'dinocaza-v2';
+var CACHE = 'dinocaza-v3';
 var FILES = ['./', './index.html', './css/styles.css', './manifest.webmanifest',
-  './js/data.js', './js/store.js', './js/audio.js', './js/models.js', './js/fx.js', './js/ar.js', './js/ui.js', './js/encounter.js', './js/main.js',
+  './js/data.js', './js/store.js', './js/audio.js', './js/models.js', './js/fx.js', './js/ar.js', './js/map3d.js', './js/ui.js', './js/encounter.js', './js/main.js',
   './vendor/three.min.js', './vendor/qrcode.js', './vendor/GLTFLoader.js', './vendor/SkeletonUtils.js',
   './models/Trex.glb', './models/Triceratops.glb', './models/Velociraptor.glb', './models/Stegosaurus.glb', './models/Parasaurolophus.glb', './icons/icon-192.png', './icons/icon-512.png'];
 self.addEventListener('install', function (e) {

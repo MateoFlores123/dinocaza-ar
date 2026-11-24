@@ -120,7 +120,17 @@
   }
 
   /* ---------------- Materiales por actor ---------------- */
-  function makeMats(c, golden) {
+  /* Aplica el color de una variante (plata, oro, gemas) o de un único */
+  function tint(m, lk) {
+    if (!lk || !m) return;
+    var c = new T.Color(lk.color);
+    if (m.color) m.color.lerp(c, lk.lerp === undefined ? 0.8 : lk.lerp);
+    if (m.map && lk.lerp >= 0.8) m.color = c.clone();
+    m.metalness = lk.metal; m.roughness = lk.rough;
+    m.emissive = new T.Color(lk.emissive); m.emissiveIntensity = lk.glow;
+    m.needsUpdate = true;
+  }
+  function makeMats(c, lk) {
     var skin = new T.MeshStandardMaterial({ map: skinTexture(c, c.body.length * 13), roughness: 0.78, metalness: 0.02 });
     var accent = new T.MeshStandardMaterial({ color: c.accent, roughness: 0.6 });
     var dark = new T.MeshStandardMaterial({ color: '#2b241d', roughness: 0.5 });
@@ -130,17 +140,11 @@
     var mouth = new T.MeshStandardMaterial({ color: '#7a2a2a', roughness: 0.6 });
     var wing = c.wing ? new T.MeshStandardMaterial({ map: wingTexture(c), side: T.DoubleSide, roughness: 0.8 }) : null;
     accent.side = T.DoubleSide;
-    if (golden) {
-      [skin, accent].forEach(function (m) {
-        m.color = new T.Color('#f2c14e'); m.metalness = 0.75; m.roughness = 0.32;
-        m.emissive = new T.Color('#4a2f00'); m.emissiveIntensity = 0.5;
-      });
-      if (wing) { wing.color = new T.Color('#f6d27a'); wing.metalness = 0.4; }
-    }
+    if (lk) { tint(skin, lk); tint(accent, lk); if (wing) tint(wing, lk); accent.emissiveIntensity = lk.glow * 1.4; }
     var skinSk = skin.clone(); skinSk.skinning = true;
     var lc = mix(hexToRgb(c.body), hexToRgb(c.mark), 0.18);
     var limb = new T.MeshStandardMaterial({ color: new T.Color(lc[0] / 255, lc[1] / 255, lc[2] / 255), roughness: 0.8 });
-    if (golden) { limb.color = new T.Color('#e8b444'); limb.metalness = 0.7; limb.roughness = 0.35; }
+    if (lk) tint(limb, lk);
     var limbSk = limb.clone(); limbSk.skinning = true;
     return { skin: skin, skinSk: skinSk, limb: limb, limbSk: limbSk, accent: accent, dark: dark, bone: bone, eye: eye, pupil: pupil, mouth: mouth, wing: wing };
   }
@@ -710,7 +714,9 @@
     opts = opts || {};
     this.sp = sp;
     this.kind = sp.model.kind;
-    this.golden = !!opts.golden;
+    this.variant = opts.variant || (opts.golden ? 'oro' : 'normal');
+    this.look = DC.look(this.variant);
+    this.golden = this.variant === 'oro';
     this.root = new T.Group();
     this.inner = grp(0, 0, 0, this.root);
     this.body = grp(0, 0, 0, this.inner);
@@ -721,7 +727,7 @@
     if (ext) {
       buildFromGLB(this, ext);
     } else {
-      this.mats = makeMats(sp.model.colors, this.golden);
+      this.mats = makeMats(sp.model.colors, this.look);
       if (this.kind === 'theropod') buildTheropod(this, p, this.mats);
       else if (this.kind === 'quad') buildQuad(this, p, this.mats);
       else if (this.kind === 'ptero') buildPtero(this, p, this.mats);
@@ -1066,11 +1072,7 @@
           c.needsUpdate = true;
         }
         if (o.isSkinnedMesh) c.skinning = true;
-        if (a.golden) {
-          if (c.color) c.color.lerp(gold, 0.78);
-          c.metalness = 0.7; c.roughness = 0.35;
-          c.emissive = new T.Color('#4a2f00'); c.emissiveIntensity = 0.5;
-        }
+        if (a.look) tint(c, a.look);
         mats.push(c);
         return c;
       });
@@ -1151,22 +1153,60 @@
   /* =============================================================
      Dinoesfera de ámbar
      ============================================================= */
-  function makeSphere() {
+  function makeSphere(type) {
+    var B = (DC.BALLS && DC.BALLS[type]) || DC.BALLS.dino;
+    var r = 0.11;
     var g = new T.Group();
-    var amber = new T.MeshStandardMaterial({ color: '#f2a531', emissive: '#7a3a00', emissiveIntensity: 0.55, roughness: 0.15, metalness: 0.1, transparent: true, opacity: 0.93 });
-    var top = new T.Mesh(new T.SphereGeometry(0.11, 24, 16, 0, Math.PI * 2, 0, Math.PI / 2), amber);
-    var bot = new T.Mesh(new T.SphereGeometry(0.11, 24, 16, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2),
-      new T.MeshStandardMaterial({ color: '#3b2a1c', roughness: 0.5, metalness: 0.2 }));
-    var band = new T.Mesh(new T.TorusGeometry(0.111, 0.012, 8, 32), new T.MeshStandardMaterial({ color: '#1d1610', roughness: 0.4 }));
+    var shell = new (T.MeshPhysicalMaterial || T.MeshStandardMaterial)({
+      color: B.mid, roughness: 0.12, metalness: 0.1, clearcoat: 1, clearcoatRoughness: 0.06,
+      emissive: B.top, emissiveIntensity: 0.22, transparent: true, opacity: 0.96
+    });
+    var metal = new T.MeshStandardMaterial({ color: B.bottom, roughness: 0.28, metalness: 0.85 });
+    var bandM = new T.MeshStandardMaterial({ color: B.band, roughness: 0.3, metalness: 0.9 });
+    var btnMat = new T.MeshStandardMaterial({ color: '#fff7e2', emissive: B.glow, emissiveIntensity: 1.2, roughness: 0.2 });
+    /* parte baja fija */
+    var bot = new T.Mesh(new T.SphereGeometry(r, 32, 16, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), metal);
+    var band = new T.Mesh(new T.TorusGeometry(r * 1.01, r * 0.1, 10, 48), bandM);
     band.rotation.x = Math.PI / 2;
-    var btn = new T.Mesh(new T.CylinderGeometry(0.028, 0.028, 0.02, 16), new T.MeshStandardMaterial({ color: '#fff4dc', emissive: '#ffcf70', emissiveIntensity: 0.6 }));
-    btn.rotation.x = Math.PI / 2; btn.position.z = 0.108;
-    /* mosquito atrapado en el ámbar */
-    var bug = new T.Mesh(new T.SphereGeometry(0.018, 8, 6), new T.MeshBasicMaterial({ color: '#3a1f08' }));
-    bug.scale.set(1, 0.6, 1.8); bug.position.set(0.02, 0.05, 0.03);
-    [top, bot, band, btn, bug].forEach(function (x) { x.castShadow = true; g.add(x); });
-    g.userData.top = top;
-    g.userData.btn = btn;
+    g.add(bot, band);
+    for (var i = 0; i < 12; i++) {
+      var rv = new T.Mesh(new T.SphereGeometry(r * 0.04, 6, 4), bandM);
+      var a = i / 12 * Math.PI * 2;
+      rv.position.set(Math.cos(a) * r * 1.1, 0, Math.sin(a) * r * 1.1);
+      g.add(rv);
+    }
+    /* tapa con bisagra atrás: se abre para atrapar al dinosaurio */
+    var lid = new T.Group(); lid.position.set(0, 0, -r); g.add(lid);
+    var top = new T.Mesh(new T.SphereGeometry(r, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2), shell);
+    top.position.z = r; lid.add(top);
+    var core = new T.Mesh(new T.SphereGeometry(r * 0.55, 16, 10), new T.MeshBasicMaterial({ color: B.glow, transparent: true, opacity: 0.55, blending: T.AdditiveBlending, depthWrite: false }));
+    core.position.set(0, r * 0.35, r); lid.add(core);
+    if (type === 'dino' || !type) {
+      /* mosquito atrapado en el ámbar */
+      var bugM = new T.MeshBasicMaterial({ color: '#3a1f08' });
+      var bug = new T.Mesh(new T.SphereGeometry(r * 0.12, 8, 6), bugM); bug.scale.set(1, 0.6, 2);
+      bug.position.set(r * 0.15, r * 0.45, r * 1.05); lid.add(bug);
+      [-1, 1].forEach(function (s) {
+        var w = new T.Mesh(new T.CircleGeometry(r * 0.16, 8), new T.MeshBasicMaterial({ color: '#f6e0b0', transparent: true, opacity: 0.6, side: T.DoubleSide }));
+        w.scale.set(1, 0.4, 1); w.rotation.set(-1.2, s * 0.6, 0); w.position.set(r * 0.15 + s * r * 0.12, r * 0.5, r * 1.02); lid.add(w);
+      });
+    } else {
+      /* franjas decorativas */
+      var stripeM = new T.MeshStandardMaterial({ color: type === 'ultra' ? '#1a1a1f' : '#e9f2ff', roughness: 0.3, metalness: 0.6 });
+      [-0.35, 0.35].forEach(function (k) {
+        var st = new T.Mesh(new T.TorusGeometry(r * 1.004, r * 0.05, 6, 40, Math.PI), stripeM);
+        st.rotation.set(0, Math.PI / 2 + k, 0); st.position.z = r; lid.add(st);
+      });
+    }
+    /* botón frontal con anillo luminoso */
+    var plate = new T.Mesh(new T.CylinderGeometry(r * 0.36, r * 0.36, r * 0.16, 24), bandM);
+    plate.rotation.x = Math.PI / 2; plate.position.z = r * 1.06; g.add(plate);
+    var btn = new T.Mesh(new T.CylinderGeometry(r * 0.24, r * 0.24, r * 0.1, 24), btnMat);
+    btn.rotation.x = Math.PI / 2; btn.position.z = r * 1.16; g.add(btn);
+    g.traverse(function (x) { if (x.isMesh) x.castShadow = true; });
+    var glow = DC.FX && DC.FX.sprite ? DC.FX.sprite('soft', B.glow, 0.34, true) : null;
+    if (glow) { glow.material.opacity = 0.45; g.add(glow); }
+    g.userData = { lid: lid, btn: btn, btnMat: btnMat, glow: glow, core: core, type: type || 'dino', ball: B };
     return g;
   }
 
@@ -1175,6 +1215,7 @@
     makeSphere: makeSphere,
     setLite: function (v) { lite = !!v; },
     skinnedBox: skinnedBox,
+    tint: tint,
     segGeom: segGeom
   };
 })();

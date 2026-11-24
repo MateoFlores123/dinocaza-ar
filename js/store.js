@@ -22,16 +22,17 @@
   function fresh() {
     return {
       v: 1, created: Date.now(), devOffsetDays: 0, onboarded: false,
-      name: '', age: 'nino', difficulty: 'facil',
+      name: '', age: 'nino', difficulty: 'normal',
       settings: { sound: true, camera: true, lite: false, gyro: true, qr: false },
-      level: 1, xp: 0, coins: 120, spheres: 0, items: { leaf: 2, fern: 1 },
+      level: 1, xp: 0, coins: 120, spheres: 0, items: { leaf: 2, fern: 1, super: 1, ultra: 0 },
+      uniques: {}, collectionPrizes: [],
       team: [], partner: null,
       album: {},
       visits: 0, lastDay: null, visitDays: [],
       visit: null,
       eggs: [], codes: [], passportClaimed: [], medals: [],
       totals: { caps: 0, wins: 0, losses: 0, routes: 0, golden: 0, hardWins: 0, quiz: 0, throws: 0, encounters: 0,
-        fichas: 0, specials: 0, crits: 0, perfect: 0, excellent: 0, flees: 0 },
+        fichas: 0, specials: 0, crits: 0, perfect: 0, excellent: 0, flees: 0, variants: 0 },
       history: [],
       lastTick: Date.now()
     };
@@ -46,6 +47,10 @@
     Object.keys(f).forEach(function (k) { if (S[k] === undefined) S[k] = f[k]; });
     Object.keys(f.totals).forEach(function (k) { if (S.totals[k] === undefined) S.totals[k] = 0; });
     Object.keys(f.settings).forEach(function (k) { if (S.settings[k] === undefined) S.settings[k] = f.settings[k]; });
+    /* Migraciones: dificultad única y variantes */
+    S.difficulty = 'normal';
+    ['super', 'ultra', 'leaf', 'fern'].forEach(function (k) { if (S.items[k] === undefined) S.items[k] = 0; });
+    S.team.forEach(function (d) { if (!d.variant) d.variant = d.golden ? 'oro' : 'normal'; });
     return S;
   }
   function saveNow() {
@@ -62,7 +67,8 @@
   function stats(inst) {
     var sp = DC.SP[inst.sp];
     var m = 1 + 0.085 * (inst.lvl - 1);
-    var g = inst.golden ? 1.1 : 1;
+    var lk = DC.look(inst.variant || (inst.golden ? 'oro' : 'normal'));
+    var g = lk ? lk.mult : 1;
     return {
       maxHp: Math.round(sp.base.hp * m * g),
       atk: Math.round(sp.base.atk * m * g),
@@ -70,8 +76,10 @@
       spd: Math.round(sp.base.spd * m * g)
     };
   }
-  function makeInst(spId, lvl, golden) {
-    var inst = { uid: uid(), sp: spId, lvl: Math.max(1, lvl | 0), xp: 0, hp: 0, golden: !!golden, caughtAt: Date.now() };
+  function makeInst(spId, lvl, variant) {
+    if (variant === true) variant = 'oro';
+    variant = variant || 'normal';
+    var inst = { uid: uid(), sp: spId, lvl: Math.max(1, lvl | 0), xp: 0, hp: 0, variant: variant, golden: variant === 'oro', caughtAt: Date.now() };
     inst.hp = stats(inst).maxHp;
     return inst;
   }
@@ -101,6 +109,7 @@
   /* ---------------- Álbum ---------------- */
   function albumEntry(id) {
     if (!S.album[id]) S.album[id] = { seen: 0, caught: 0, golden: 0, quiz: false, read: false, first: null };
+    if (!S.album[id].variants) S.album[id].variants = {};
     return S.album[id];
   }
   function caughtCount() {
@@ -129,6 +138,12 @@
   }
 
   function rollEncounter(zoneId) {
+    var uq = DC.forceUnique ? DC.UNIQUE[DC.forceUnique] : rollUnique(zoneId);
+    DC.forceUnique = null;
+    if (uq) {
+      var pr = partner();
+      return { sp: DC.SP[uq.sp], lvl: Math.max(2, Math.round(Math.max(S.level, pr ? pr.lvl : 1) + 2)), variant: uq.id, unique: uq };
+    }
     var pool = DC.SPECIES.filter(function (s) { return s.zone === zoneId && availability(s).ok; });
     if (!pool.length) pool = DC.SPECIES.filter(function (s) { return s.zone === zoneId && !s.minVisits; });
     var total = 0;
@@ -140,14 +155,65 @@
     });
     var r = Math.random() * total, sp = pool[0];
     for (var i = 0; i < pool.length; i++) { r -= w[i]; if (r <= 0) { sp = pool[i]; break; } }
-    var diff = DC.DIFFICULTY[S.difficulty];
+    var diff = DC.DIFF;
     var p = partner();
     var baseLvl = Math.max(S.level, p ? p.lvl : 1);
     var lvl = Math.max(1, Math.round(baseLvl + diff.enemyLvl + rnd(-1, 1.4) + (sp.rarity === 'legendaria' ? 3 : sp.rarity === 'epica' ? 1 : 0)));
-    var goldenChance = 1 / 20;
-    var h = new Date(now()).getHours();
-    if (h >= 16) goldenChance = 1 / 12; /* "Hora dorada" al atardecer */
-    return { sp: sp, lvl: lvl, golden: Math.random() < goldenChance };
+    return { sp: sp, lvl: lvl, variant: rollVariant(), unique: null };
+  }
+
+
+  /* ---------------- Variantes, únicos y colecciones ---------------- */
+  function rollVariant(egg) {
+    var h = new Date(now()).getHours(), r = Math.random(), acc = 0;
+    for (var i = 0; i < DC.VARIANT_ORDER.length; i++) {
+      var v = DC.VARIANTS[DC.VARIANT_ORDER[i]];
+      var c = v.chance * (v.id === 'oro' && h >= 16 ? 1.8 : 1) * (egg ? 3 : 1); /* hora dorada al atardecer */
+      acc += c;
+      if (r < acc) return v.id;
+    }
+    return 'normal';
+  }
+  function uniquesLeft(zoneId) {
+    return DC.UNIQUES.filter(function (u) {
+      return u.zone === zoneId && !S.uniques[u.id] && availability(DC.SP[u.sp]).ok;
+    });
+  }
+  function noteVariant(spId, variant) {
+    var a = albumEntry(spId);
+    if (!variant || variant === 'normal') return;
+    a.variants[variant] = (a.variants[variant] || 0) + 1;
+    if (variant === 'oro') { a.golden++; S.totals.golden++; }
+    if (!DC.UNIQUE[variant]) S.totals.variants = (S.totals.variants || 0) + 1;
+  }
+  function addPrize(prizeId, source) {
+    var pz = DC.PRIZES[prizeId];
+    return addCode(pz ? pz.name : prizeId, source, prizeId);
+  }
+  function captureUnique(uId) {
+    var u = DC.UNIQUE[uId];
+    if (!u || S.uniques[uId]) return null;
+    var c = addPrize('helado', 'Único: ' + u.name);
+    S.uniques[uId] = { at: Date.now(), code: c.code };
+    save();
+    return c;
+  }
+  /* Premios por completar colecciones. Devuelve los códigos nuevos. */
+  function checkCollections() {
+    var out = [];
+    if (caughtCount() >= DC.SPECIES.length && S.collectionPrizes.indexOf('album') < 0) {
+      S.collectionPrizes.push('album'); out.push(addPrize('entrada', 'Álbum completo'));
+    }
+    if (Object.keys(S.uniques).length >= DC.UNIQUES.length && S.collectionPrizes.indexOf('uniques') < 0) {
+      S.collectionPrizes.push('uniques'); out.push(addPrize('peluche_oro', 'Los 8 dinosaurios únicos'));
+    }
+    if (out.length) save();
+    return out;
+  }
+  function rollUnique(zoneId) {
+    var left = uniquesLeft(zoneId);
+    if (!left.length || Math.random() > DC.UNIQUE_CHANCE * left.length) return null;
+    return left[Math.floor(Math.random() * left.length)];
   }
 
   /* ---------------- Visitas, pasaporte y misiones ---------------- */
@@ -194,9 +260,9 @@
           for (var i = 0; i < w; i++) weighted.push(s);
         });
         var sp = pick(weighted);
-        var inst = makeInst(sp.id, Math.max(3, S.level), Math.random() < 0.12);
+        var inst = makeInst(sp.id, Math.max(3, S.level), Math.random() < 0.25 ? rollVariant(true) : 'normal');
         addToTeam(inst);
-        var a = albumEntry(sp.id); a.seen++; a.caught++; if (inst.golden) { a.golden++; S.totals.golden++; }
+        var a = albumEntry(sp.id); a.seen++; a.caught++; noteVariant(sp.id, inst.variant);
         if (!a.first) a.first = Date.now();
         ev.hatched.push(inst);
       } else keep.push(egg);
@@ -209,8 +275,10 @@
         if (p.items.spheres) S.spheres += p.items.spheres;
         if (p.items.coins) S.coins += p.items.coins;
         if (p.items.fern) S.items.fern = (S.items.fern || 0) + p.items.fern;
+        if (p.items.super) S.items.super = (S.items.super || 0) + p.items.super;
+        if (p.items.ultra) S.items.ultra = (S.items.ultra || 0) + p.items.ultra;
+        if (p.prize) addPrize(p.prize, 'Pasaporte · visita ' + p.visit);
         if (p.items.egg) for (var i = 0; i < p.items.egg; i++) S.eggs.push({ id: uid(), laidVisit: S.visits });
-        if (p.code) addCode(p.code, 'Pasaporte · visita ' + p.visit);
         ev.passport.push(p);
       }
     });
@@ -260,6 +328,7 @@
     if (!S.visit.allClaimed && S.visit.missions.every(function (x) { return x.claimed; })) {
       S.visit.allClaimed = true;
       S.spheres += 3;
+      S.items.super = (S.items.super || 0) + 1;
       res.bonus = true;
     }
     save();
@@ -275,6 +344,7 @@
       S.level++;
       S.coins += 50;
       S.spheres += 2;
+      S.items.super = (S.items.super || 0) + 1;
       ups.push(S.level);
     }
     save();
@@ -303,7 +373,7 @@
       v.routeDone = true; route = true;
       S.totals.routes++;
       S.coins += 150;
-      addCode('10 % de descuento en la tienda de recuerdos', 'Ruta completa · ' + v.day);
+      addPrize('canchita', 'Ruta del tesoro · ' + v.day);
     }
     save();
     return { first: first, route: route };
@@ -328,8 +398,8 @@
     if (c.length !== 8) return false;
     return checksum(c.slice(0, 7)) === c[7];
   }
-  function addCode(label, source) {
-    var c = { code: makeCode(), label: label, source: source, created: Date.now(), redeemed: false };
+  function addCode(label, source, prize) {
+    var c = { code: makeCode(), label: label, source: source, prize: prize || null, created: Date.now(), redeemed: false };
     S.codes.unshift(c);
     save();
     return c;
@@ -358,6 +428,8 @@
     availability: availability, rollEncounter: rollEncounter,
     checkVisit: checkVisit, bump: bump, claimMission: claimMission, missionDef: missionDef,
     addXp: addXp, addDinoXp: addDinoXp, markZone: markZone,
-    addCode: addCode, validCode: validCode, checkMedals: checkMedals
+    addCode: addCode, validCode: validCode, checkMedals: checkMedals,
+    addPrize: addPrize, captureUnique: captureUnique, checkCollections: checkCollections, noteVariant: noteVariant,
+    rollVariant: rollVariant, uniquesLeft: uniquesLeft
   };
 })();
