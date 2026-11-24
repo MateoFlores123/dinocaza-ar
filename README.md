@@ -108,3 +108,16 @@ qr-zonas.html         Hoja imprimible de QR para los letreros
 ```
 
 El progreso se guarda en el navegador de cada visitante. Para producción, el siguiente paso es un backend que sincronice cuentas y alimente el panel del parque con todas las visitas.
+
+## Modo paseo (estilo Pokémon GO)
+
+- **Salir a caminar** (inicio): tu avatar recorre el parque en 3D. En el parque usa el **GPS** (botón del mapa, se calibra en la entrada); en PC/proyector usa el **joystick**, **WASD/flechas** o toca el suelo.
+- Mientras caminas aparecen los **puestos** (canchita, helados, comida rápida, jugos, tienda de peluches, fotos), los **juegos infantiles**, el **área de parrillas** y la **zona de realidad virtual**. Cada lugar nuevo da +15 monedas y, si tienes un premio de ese puesto, puedes mostrar el QR ahí mismo.
+- Los **dinosaurios salvajes** aparecen alrededor del avatar según el hábitat más cercano: acércate o tócalos para atraparlos.
+- Las **réplicas reales** del parque (haz dorado) son **jefes**: se escanean con la cámara y, si se reconocen, empieza una pelea de jefe (más vida, sin captura, premio grande). Vencer a los 5 da un juego gratis.
+
+### Reconocimiento de réplicas
+
+`js/vision.js` usa MobileNet (TensorFlow.js) y compara la cámara con fotos de referencia de cada estatua. Para entrenarlo: **Ajustes → Entrenar réplicas del parque**, tomar 4–8 fotos de cada réplica real desde distintos ángulos y **Exportar**; guardar el archivo como `replicas/referencias.json` para que todos los celulares las reconozcan. El triceratops funciona sin entrenamiento (ImageNet ya conoce la clase). Necesita internet la primera vez para descargar el modelo.
+
+> Las posiciones de lugares y réplicas (`DC.PARK`, `DC.PLACES`, `DC.REPLICAS` en `js/data.js`) son ilustrativas: ajústalas al plano real de Dino Park.

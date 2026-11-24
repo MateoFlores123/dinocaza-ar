@@ -142,6 +142,7 @@
       '<div class="map-card"><div class="map3d" id="map3d"></div>' +
       '<div class="map-top"><span class="tag">Visita #' + (v ? v.n : 1) + ' · ' + DC.DAYS[d.getDay()] + '</span><span class="tag route"><span class="route-steps">' + steps + '</span>' + done + '/5</span></div>' +
       '<div class="map-hint">' + icon('map') + 'Gira la isla con el dedo y toca un hábitat</div></div>' +
+      '<button class="walk-cta" data-act="walk"><span class="wc-art" aria-hidden="true"><i class="wc-sun"></i><i class="wc-hill"></i><i class="wc-path"></i><i class="wc-dino"></i><i class="wc-kid"></i></span><span class="wc-txt"><b>Salir a caminar</b><small>Recorre el parque con tu avatar: puestos, juegos y réplicas jefe</small></span>' + icon('arrow') + '</button>' +
       (nz ? '<button class="btn block sun big" data-act="zone" data-zone="' + nz.id + '">' + icon('camera') + 'Explorar ' + esc(nz.name) + '</button>'
         : '<div class="card done-card">' + prizeArt('canchita') + '<div><b>¡Ruta del tesoro completa!</b><p class="muted">Tu canchita gratis está en Premios. Sigue explorando: los únicos aparecen en cualquier zona.</p></div></div>') +
       '<div class="duo">' +
@@ -407,6 +408,8 @@
       sw('lite', s.settings.lite, 'Modo ligero', 'Menos efectos: ahorra batería') +
       sw('qr', s.settings.qr, 'Validar zonas con QR', 'Para el parque: cada zona tiene su QR') +
       '</div>' +
+      avatarPicker() +
+      '<button class="btn ghost small" data-act="train">' + icon('target') + 'Entrenar réplicas del parque (cámara)</button>' +
       '<div class="card stack" style="gap:10px"><div><div class="eyebrow">Modo presentación</div><p class="muted">Para mostrar el proyecto sin esperar días reales.</p></div>' +
       '<button class="btn ghost small" data-act="dev-visit">Simular próxima visita (+1 día)</button>' +
       '<button class="btn ghost small" data-act="dev-spheres">+10 esferas de cada tipo y +2000 monedas</button>' +
@@ -417,6 +420,13 @@
       '</div>', {
       onClose: function () { var n = $('#set-name'); }
     });
+  }
+  function avatarPicker() {
+    var a = S().avatar || {}, C = DC.AVATAR_COLORS;
+    var dots = function (k, list, cur) { return list.map(function (c, i) { return '<button class="swatch" data-act="avatar" data-k="' + k + '" data-c="' + c + '" style="--c:' + c + '" aria-label="Color ' + (i + 1) + '" aria-pressed="' + ((cur || list[0]) === c) + '"></button>'; }).join(''); };
+    return '<div class="card stack" style="gap:8px"><div class="eyebrow">Tu avatar para el paseo</div>' +
+      '<div class="row between"><span class="small">Polera</span><div class="swatches">' + dots('shirt', C.shirt, a.shirt) + '</div></div>' +
+      '<div class="row between"><span class="small">Piel</span><div class="swatches">' + dots('skin', C.skin, a.skin) + '</div></div></div>';
   }
   function panel() {
     var s = S();
@@ -565,6 +575,13 @@
         try { navigator.clipboard.writeText(code).then(function () { toast('Código copiado', 'check'); }, function () { toast(code, 'qr'); }); } catch (er) { toast(code, 'qr'); }
         break;
       case 'settings': DC.Audio.play('tap'); settings(); break;
+      case 'walk': DC.Audio.play('tap'); DC.Walk.openWalk(); break;
+      case 'train': DC.Vision.trainer(); break;
+      case 'avatar':
+        s.avatar = s.avatar || {}; s.avatar[b.dataset.k] = b.dataset.c; DC.Store.save();
+        b.parentNode.querySelectorAll('button').forEach(function (x) { x.setAttribute('aria-pressed', x === b); });
+        DC.Walk.rebuildAvatar();
+        break;
       case 'setting':
         var k = b.dataset.key; s.settings[k] = !s.settings[k]; b.setAttribute('aria-checked', s.settings[k]); DC.Store.save();
         if (k === 'sound' && s.settings.sound) DC.Audio.play('tap');

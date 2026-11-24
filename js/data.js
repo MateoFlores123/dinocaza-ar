@@ -422,3 +422,35 @@ DC.MODEL_FILES = {
   parasaurolophus: { file: 'models/Parasaurolophus.glb' }
 };
 
+
+/* ---------------------------------------------------------------------
+   Modo paseo (estilo Pokémon GO). Coordenadas en unidades de 2 m.
+   La entrada está al sur (z positivo) y el norte es -z.
+   Ajustar estas posiciones al plano real de Dino Park.
+   --------------------------------------------------------------------- */
+DC.PARK = {
+  unit: 2, radius: 78, entrance: { x: 0, z: 68 },
+  zones: { 1: { x: -40, z: 22, r: 11 }, 2: { x: -46, z: -18, r: 11 }, 3: { x: -12, z: -50, r: 11 }, 4: { x: 34, z: -42, r: 11 }, 5: { x: 48, z: 8, r: 12 } }
+};
+/* Lugares del parque que aparecen al caminar */
+DC.PLACES = [
+  { id: 'entrada', name: 'Entrada y boletería', kind: 'gate', x: 0, z: 66, desc: 'Aquí empieza la aventura. Escanea el QR de tu entrada.', prize: 'entrada20' },
+  { id: 'canchita', name: 'Canchita', kind: 'stand', x: -7, z: 54, color: '#ff5a4e', prop: 'popcorn', desc: 'Canchita dulce y salada recién hecha.', prize: 'canchita' },
+  { id: 'helado', name: 'Heladería', kind: 'stand', x: -7, z: 43, color: '#ff7fb0', prop: 'icecream', desc: 'Helados de frutas de Arequipa. Aquí se canjea el helado de cada dinosaurio único.', prize: 'helado' },
+  { id: 'comida', name: 'Comida rápida', kind: 'stand', x: -7, z: 32, color: '#ff9a2e', prop: 'burger', desc: 'Hamburguesas, salchipapas y anticuchos.' },
+  { id: 'juguera', name: 'Juguería', kind: 'stand', x: 7, z: 54, color: '#2fb36b', prop: 'juice', desc: 'Jugos y refrescos para seguir caminando.' },
+  { id: 'tienda', name: 'Tienda de recuerdos', kind: 'stand', x: 7, z: 43, color: '#8a63ff', prop: 'plush', desc: 'Peluches, figuras y stickers de dinosaurios.', prize: 'peluche' },
+  { id: 'fotos', name: 'Punto de fotos', kind: 'stand', x: 7, z: 32, color: '#39b6ff', prop: 'camera', desc: 'Llévate tu foto impresa con tu dinosaurio favorito.', prize: 'foto' },
+  { id: 'juegos', name: 'Juegos infantiles', kind: 'playground', x: -26, z: 46, desc: 'Toboganes, columpios y la zona de juegos. Aquí se canjea tu juego gratis.', prize: 'juego' },
+  { id: 'parrillas', name: 'Área de parrillas', kind: 'bbq', x: 28, z: 42, desc: 'Mesas y parrillas para compartir en familia.' },
+  { id: 'vr', name: 'Realidad virtual', kind: 'vr', x: 20, z: -14, desc: 'Ponte los lentes y vuela con los pterosaurios.' }
+];
+/* Réplicas reales del parque: se reconocen con la cámara y son jefes */
+DC.REPLICAS = [
+  { id: 'rep_tricera', sp: 'triceratops', name: 'Gran Triceratops', zone: 1, x: -44, z: 26, desc: 'La réplica a tamaño real del Valle.' },
+  { id: 'rep_raptor', sp: 'velociraptor', name: 'Manada de Raptores', zone: 2, x: -50, z: -14, desc: 'Las réplicas escondidas entre los helechos.' },
+  { id: 'rep_spino', sp: 'spinosaurus', name: 'Spinosaurus de la Laguna', zone: 3, x: -16, z: -54, desc: 'La gran vela que se ve desde el lago.' },
+  { id: 'rep_ptera', sp: 'pteranodon', name: 'Pteranodon del Mirador', zone: 4, x: 38, z: -46, desc: 'Vigila desde lo alto de la cumbre.' },
+  { id: 'rep_trex', sp: 'trex', name: 'T. rex Gigante', zone: 5, x: 52, z: 12, desc: 'La réplica más grande del parque. ¿Te atreves?' }
+];
+DC.AVATAR_COLORS = { shirt: ['#2fb36b', '#39b6ff', '#ff6b57', '#8a63ff', '#ffc93c', '#ff7fb0'], skin: ['#f2c7a5', '#d9a273', '#b07a4f', '#7a4e30'] };

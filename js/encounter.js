@@ -69,7 +69,9 @@
     fx.appendChild(d); setTimeout(function () { d.remove(); }, 1000);
   }
   function flashWhite() { var f = document.createElement('div'); f.className = 'flashwhite'; $('#fxl').appendChild(f); setTimeout(function () { f.remove(); }, 520); }
-  function enemyName(e) { return e.unique ? e.unique.name : e.sp.name; }
+  function enemyName(e) { return e.boss ? e.boss.name : e.unique ? e.unique.name : e.sp.name; }
+  function backHome() { if (st && st.opts && st.opts.returnTo === 'walk' && DC.Walk) { cleanup(); hideStage(); DC.Walk.resume(); return true; } return false; }
+  function mapLabel() { return st && st.opts && st.opts.returnTo === 'walk' ? 'Volver al paseo' : 'Volver al mapa'; }
   function variantChip(lk) {
     if (!lk) return '';
     return '<span class="vchip' + (lk.unique ? ' unique' : '') + '" style="--vc:' + lk.chip + '">' + (lk.unique ? '★ Único' : U().esc(lk.name)) + '</span>';
@@ -101,13 +103,13 @@
   }
 
   /* ---------------- Inicio del encuentro ---------------- */
-  function start(zoneId) {
+  function start(zoneId, opts) {
     if (st) cleanup();
     var s = S();
-    st = { zone: zoneId, phase: 'scan', enemy: null, me: null, unsub: [], toasts: [], levelUps: [], rewards: [], appeared: false, outcome: null };
+    st = { zone: zoneId, opts: opts || {}, phase: 'scan', enemy: null, me: null, unsub: [], toasts: [], levelUps: [], rewards: [], appeared: false, outcome: null };
     showStage();
     hudBase();
-    $('#hb').innerHTML = '<div class="hud-pills"><button class="pillbtn" data-h="leave">' + icon('back') + 'Volver al mapa</button></div>';
+    $('#hb').innerHTML = '<div class="hud-pills"><button class="pillbtn" data-h="leave">' + icon('back') + mapLabel() + '</button></div>';
     var sc = document.createElement('div'); sc.className = 'scan'; sc.id = 'scan'; $('#fxl').appendChild(sc);
     hint('Buscando huellas en ' + DC.ZONES[zoneId - 1].short + '…');
     st.unsub.push(DC.AR.onFrame(frame));
@@ -121,7 +123,7 @@
 
   function spawn() {
     var myst = st;
-    var roll = DC.Store.rollEncounter(st.zone);
+    var roll = st.opts.roll || DC.Store.rollEncounter(st.zone);
     DC.GLB.ready(roll.sp.id, 3000).then(function () { if (st === myst) spawnRoll(roll); });
   }
   function spawnRoll(roll) {
@@ -138,7 +140,9 @@
     DC.AR.add(actor);
     var stats = DC.Store.stats({ sp: sp.id, lvl: roll.lvl, variant: roll.variant });
     var lk = DC.look(roll.variant);
-    st.enemy = { actor: actor, sp: sp, lvl: roll.lvl, variant: roll.variant, look: lk, unique: roll.unique, golden: roll.variant === 'oro', st: stats, hp: stats.maxHp, max: stats.maxHp, pos: new T.Vector3(x, 0, z), exhausted: false };
+    var boss = st.opts.boss || null;
+    if (boss) { stats = Object.assign({}, stats); stats.maxHp = Math.round(stats.maxHp * 2.2); stats.atk = Math.round(stats.atk * 1.1); actor.root.scale.multiplyScalar(1.25); }
+    st.enemy = { actor: actor, sp: sp, lvl: roll.lvl, variant: roll.variant, look: lk, unique: roll.unique, boss: boss, golden: roll.variant === 'oro', st: stats, hp: stats.maxHp, max: stats.maxHp, pos: new T.Vector3(x, 0, z), exhausted: false };
     st.phase = 'appear';
     var e = DC.Store.albumEntry(sp.id); e.seen++;
     s.totals.encounters++; DC.Store.bump('encounters');
@@ -169,7 +173,8 @@
     st.appeared = true;
     var e = st.enemy;
     hint('');
-    if (e.unique) banner('<span style="color:' + e.look.aura + '">¡Dinosaurio único!</span><br>' + U().esc(e.unique.name) + '<small>Atrápalo y gana un helado gratis</small>', 2600);
+    if (e.boss) banner('<span style="color:#ffc93c">¡Jefe del parque!</span><br>' + U().esc(e.boss.name) + '<small>Réplica real · Nv. ' + e.lvl + ' · véncelo con tu equipo</small>', 2600);
+    else if (e.unique) banner('<span style="color:' + e.look.aura + '">¡Dinosaurio único!</span><br>' + U().esc(e.unique.name) + '<small>Atrápalo y gana un helado gratis</small>', 2600);
     else banner((e.look ? '<span style="color:' + e.look.aura + '">¡Variante ' + U().esc(e.look.name) + '!</span><br>' : '') + '¡' + U().esc(e.sp.name) + ' salvaje!<small>' + DC.RARITY[e.sp.rarity].name + ' · Nv. ' + e.lvl + '</small>', 1800);
     enemyPlate();
     menu();
@@ -179,6 +184,13 @@
     st.phase = 'menu';
     var healthy = DC.Store.healthyTeam().length > 0;
     var nb = ballsLeft();
+    if (st.enemy && st.enemy.boss) {
+      $('#hb').innerHTML = '<div class="menu-acts">' +
+        '<button class="bigbtn glass" data-h="leave">' + icon('run') + '<span>Huir</span></button>' +
+        '<button class="bigbtn green" data-h="fight"' + (healthy ? '' : ' disabled') + '>' + icon('claw') + '<span>Pelear</span></button></div>' +
+        '<p class="hud-note">' + (healthy ? 'Los jefes no se capturan: vénce al jefe y gana un gran premio' : 'Tu equipo necesita descansar antes de enfrentar al jefe.') + '</p>';
+      return;
+    }
     $('#hb').innerHTML =
       '<div class="menu-acts">' +
       '<button class="bigbtn glass" data-h="leave">' + icon('run') + '<span>Huir</span></button>' +
@@ -401,6 +413,7 @@
   /* ---------------- Ganar / perder ---------------- */
   function win() {
     var s = S(), e = st.enemy, m = st.me, d = DC.DIFF, R = DC.RARITY[e.sp.rarity];
+    if (e.boss) return winBoss();
     st.phase = 'exhausted';
     e.hp = 0; e.exhausted = true;
     st.tele = null; removeWarn(); clearRings();
@@ -425,6 +438,33 @@
     DC.Store.save();
     U().renderTop();
     setTimeout(function () { if (st && st.phase === 'exhausted') toCapture(); }, 1500);
+  }
+  function winBoss() {
+    var s = S(), e = st.enemy, m = st.me;
+    st.phase = 'won';
+    e.hp = 0; e.exhausted = true;
+    st.tele = null; removeWarn(); clearRings();
+    e.actor.play('faint');
+    m.actor.play('celebrate');
+    DC.Audio.play('win'); DC.Audio.play('levelup');
+    DC.FX.burst(new T.Vector3(e.pos.x, 1.5, e.pos.z), { tex: 'star', color: '#ffc93c', count: 70, speed: 4, size: 0.3 });
+    banner('¡Venciste al jefe!<small>' + U().esc(e.boss.name) + '</small>', 1800);
+    var xp = 220 + e.lvl * 12, coins = 300;
+    s.coins += coins;
+    s.items.ultra = (s.items.ultra || 0) + 1;
+    st.levelUps = st.levelUps.concat(DC.Store.addXp(xp));
+    var dl = DC.Store.addDinoXp(m.inst, xp * 0.9);
+    st.rewards.push(['Experiencia', '+' + xp + ' XP'], ['Dino-monedas', '+' + coins], ['Ultra Dinoesfera', '+1']);
+    if (dl) st.rewards.push([m.sp.name + ' subió de nivel', 'Nv. ' + m.inst.lvl]);
+    if (s.visit) { s.visit.replicas = s.visit.replicas || {}; s.visit.replicas[e.boss.id] = 1; }
+    s.bosses = s.bosses || {}; s.bosses[e.boss.id] = (s.bosses[e.boss.id] || 0) + 1;
+    var all = DC.REPLICAS.every(function (r) { return s.bosses[r.id]; });
+    if (all && !s.bossPrize) { s.bossPrize = true; var c = DC.Store.addPrize('juego', 'Venciste a los 5 jefes del parque'); if (c) { st.prizes = (st.prizes || []).concat([c]); st.rewards.push(['¡Los 5 jefes vencidos!', 'Juego gratis']); } }
+    s.totals.wins++;
+    collect(DC.Store.bump('wins'));
+    DC.Store.save();
+    U().renderTop();
+    setTimeout(function () { if (st && st.phase === 'won') finish('boss'); }, 1900);
   }
   function lose() {
     var s = S(), m = st.me;
@@ -678,13 +718,14 @@
     var zr = st.appeared ? DC.Store.markZone(st.zone) : { first: false, route: false };
     st.route = zr.route;
     var e = st.enemy;
-    var title = { captured: '¡Capturado!', escaped: 'Se escapó', lost: 'Tu equipo perdió', fled: 'Saliste del encuentro', won: '¡Victoria!' }[outcome] || 'Encuentro terminado';
+    var title = { captured: '¡Capturado!', escaped: 'Se escapó', lost: 'Tu equipo perdió', fled: 'Saliste del encuentro', won: '¡Victoria!', boss: '¡Venciste al jefe!' }[outcome] || 'Encuentro terminado';
     var sub = {
       captured: e.sp.name + ' se unió a tu equipo.',
       escaped: 'Volverás a encontrarlo. Debilitarlo antes ayuda mucho.',
       lost: 'Cura a tu equipo o vuelve en tu próxima visita: se recupera por completo.',
       fled: 'El dinosaurio sigue por aquí.',
-      won: 'Lo dejaste ir. Ganaste experiencia igual.'
+      won: 'Lo dejaste ir. Ganaste experiencia igual.',
+      boss: 'Derrotaste a la réplica de ' + (e.boss ? e.boss.name : '') + '. Vuelve en tu próxima visita para la revancha.'
     }[outcome] || '';
     if (zr.first) st.rewards.push(['Zona explorada', s.visit.zones.length + '/5']);
     if (zr.route) st.rewards.push(['¡Ruta del tesoro completa!', '+150 monedas y código']);
@@ -698,16 +739,17 @@
       (rw ? '<ul class="reward-list">' + rw + '</ul>' : '') +
       '<div class="stack">' +
       (outcome === 'captured' ? '<button class="btn block" data-h="seeficha">' + icon('book') + 'Ver ficha y responder pregunta</button>' : '') +
-      '<button class="btn ' + (outcome === 'captured' ? 'ghost ' : '') + 'block" data-h="tomap">Volver al mapa</button></div></div>';
+      '<button class="btn ' + (outcome === 'captured' ? 'ghost ' : '') + 'block" data-h="tomap">' + mapLabel() + '</button></div></div>';
     $('#hud').appendChild(wrap);
     U().fillPortraits(wrap);
     DC.Store.save();
   }
   function endToMap(openFicha) {
     var res = st;
+    var toWalk = res && res.opts && res.opts.returnTo === 'walk' && DC.Walk;
     cleanup();
     hideStage();
-    U().render();
+    if (toWalk) DC.Walk.resume(); else U().render();
     res.toasts.forEach(function (t, i) { setTimeout(function () { U().toast(t, 'star'); }, 300 + i * 500); });
     setTimeout(function () { U().checkMedals(); }, 200);
     var chain = Promise.resolve();
@@ -820,6 +862,7 @@
       case 'leave':
         if (st && st.photo) { cleanup(); hideStage(); U().render(); return; }
         if (!st) { hideStage(); U().render(); return; }
+        if (!st.appeared && backHome()) return;
         if (st.appeared && (st.phase === 'battle' || st.phase === 'menu' || st.phase === 'capture' || st.phase === 'lost')) {
           if (st.me && st.me.inst.hp <= 0) { finish('lost'); return; }
           finish('fled');
