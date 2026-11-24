@@ -1,0 +1,29 @@
+# Descarga los modelos 3D animados de Quaternius (licencia CC0) a la carpeta models/
+name: Descargar modelos 3D
+on:
+  workflow_dispatch:
+  push:
+    paths: ['.github/workflows/fetch-models.yml']
+permissions:
+  contents: write
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Descargar GLB
+        run: |
+          mkdir -p models
+          BASE="https://huggingface.co/datasets/codepawl/quaternius-glb/resolve/main/engine"
+          for n in Trex Triceratops Velociraptor Stegosaurus Parasaurolophus Apatosaurus; do
+            curl -fsSL --retry 3 -o "models/$n.glb" "$BASE/animateddinosaurs__$n/animateddinosaurs__$n.glb"
+            ls -la "models/$n.glb"
+          done
+          curl -fsSL "https://huggingface.co/datasets/codepawl/quaternius-glb/resolve/main/metadata.jsonl" | grep -i animateddinosaurs > models/metadata-quaternius.jsonl || true
+      - name: Guardar en el repositorio
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git add models
+          git diff --cached --quiet || git commit -m "Modelos 3D animados de Quaternius (CC0)"
+          git push
