@@ -357,3 +357,21 @@ DC.MEDALS = [
   { id: 'album', name: 'Álbum completo', test: function (s) { return DC.Store.caughtCount() >= DC.SPECIES.length; } },
   { id: 'visit5', name: 'Cinco visitas', test: function (s) { return s.visits >= 5; } }
 ];
+
+/* ---------------------------------------------------------------------
+   Modelos 3D externos (.glb con animaciones). Si el archivo no carga,
+   el juego usa el modelo procedural de models.js.
+   Para agregar otro: pon el .glb en models/ y añade una línea aquí.
+   rotY: giro extra (radianes) si el modelo no mira hacia adelante.
+   clips: nombre de la animación del archivo para cada acción del juego
+   (si se omite, se reconoce por palabras como idle, walk, attack...).
+   --------------------------------------------------------------------- */
+DC.MODEL_CREDIT = 'Modelos 3D animados: Quaternius · Animated Dinosaur Pack (CC0)';
+DC.MODEL_FILES = {
+  trex:            { file: 'models/Trex.glb' },
+  triceratops:     { file: 'models/Triceratops.glb' },
+  velociraptor:    { file: 'models/Velociraptor.glb' },
+  stegosaurus:     { file: 'models/Stegosaurus.glb' },
+  parasaurolophus: { file: 'models/Parasaurolophus.glb' }
+};
+

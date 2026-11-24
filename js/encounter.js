@@ -114,8 +114,12 @@
   }
 
   function spawn() {
-    var s = S();
+    var myst = st;
     var roll = DC.Store.rollEncounter(st.zone);
+    DC.GLB.ready(roll.sp.id, 3000).then(function () { if (st === myst) spawnRoll(roll); });
+  }
+  function spawnRoll(roll) {
+    var s = S();
     var sp = roll.sp;
     var actor = new DC.Models.Actor(sp, { golden: roll.golden });
     var spread = DC.AR.gyro.on ? 1.05 : 0.6;

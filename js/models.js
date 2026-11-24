@@ -688,6 +688,22 @@
   /* =============================================================
      Actor: modelo + animaciones
      ============================================================= */
+  /* Caja real de un modelo con huesos (tras aplicar la pose) */
+  function skinnedBox(obj) {
+    obj.updateMatrixWorld(true);
+    var box = new T.Box3(), v = new T.Vector3();
+    obj.traverse(function (m) {
+      if (!m.isMesh) return;
+      var pos = m.geometry.attributes.position;
+      if (m.isSkinnedMesh && m.boneTransform) {
+        m.skeleton.update();
+        for (var i = 0; i < pos.count; i++) {
+          v.fromBufferAttribute(pos, i); m.boneTransform(i, v); v.applyMatrix4(m.matrixWorld); box.expandByPoint(v);
+        }
+      } else box.expandByObject(m);
+    });
+    return box;
+  }
   var DISPLAY_H = { theropod: 1.75, quad: 1.45, ptero: 1.0, plesio: 1.25 };
 
   function Actor(sp, opts) {
@@ -699,15 +715,20 @@
     this.inner = grp(0, 0, 0, this.root);
     this.body = grp(0, 0, 0, this.inner);
     this.eyes = []; this.accentMats = [];
-    this.mats = makeMats(sp.model.colors, this.golden);
     this.neck = []; this.tail = []; this.legs = []; this.arms = []; this.wings = []; this.flippers = [];
     var p = sp.model;
-    if (this.kind === 'theropod') buildTheropod(this, p, this.mats);
-    else if (this.kind === 'quad') buildQuad(this, p, this.mats);
-    else if (this.kind === 'ptero') buildPtero(this, p, this.mats);
-    else buildPlesio(this, p, this.mats);
-    this.flashMats = [this.mats.skin, this.mats.skinSk, this.mats.limb, this.mats.limbSk, this.mats.accent].concat(this.accentMats);
-    if (this.mats.wing) this.flashMats.push(this.mats.wing);
+    var ext = opts.procedural ? null : DC.GLB.get(sp.id);
+    if (ext) {
+      buildFromGLB(this, ext);
+    } else {
+      this.mats = makeMats(sp.model.colors, this.golden);
+      if (this.kind === 'theropod') buildTheropod(this, p, this.mats);
+      else if (this.kind === 'quad') buildQuad(this, p, this.mats);
+      else if (this.kind === 'ptero') buildPtero(this, p, this.mats);
+      else buildPlesio(this, p, this.mats);
+      this.flashMats = [this.mats.skin, this.mats.skinSk, this.mats.limb, this.mats.limbSk, this.mats.accent].concat(this.accentMats);
+      if (this.mats.wing) this.flashMats.push(this.mats.wing);
+    }
     this.baseEmissive = this.flashMats.map(function (m) { return { c: m.emissive.clone(), i: m.emissiveIntensity }; });
 
     /* Captura de pose de reposo */
@@ -720,7 +741,7 @@
 
     /* Normalizar tamaño: altura visible estándar en AR */
     this.body.updateMatrixWorld(true);
-    var box = new T.Box3().setFromObject(this.body);
+    var box = this.isGLB ? skinnedBox(this.body) : new T.Box3().setFromObject(this.body);
     var size = box.getSize(new T.Vector3());
     var target = DISPLAY_H[this.kind] * (sp.id === 'brachiosaurus' ? 1.85 : sp.id === 'trex' ? 1.2 : sp.id === 'velociraptor' ? 0.75 : sp.id === 'dimorphodon' ? 0.75 : sp.id === 'quetzalcoatlus' ? 1.3 : 1);
     var dim = this.kind === 'ptero' ? size.x * 0.55 : this.kind === 'plesio' ? size.z * 0.55 : Math.max(size.y, size.z * 0.42);
@@ -728,6 +749,10 @@
     this.body.scale.setScalar(sc);
     this.scale = sc;
     this.body.position.y = -box.min.y * sc + (this.kind === 'ptero' ? 1.1 : this.kind === 'plesio' ? 0.35 : 0);
+    if (this.isGLB) {
+      var cen = box.getCenter(new T.Vector3());
+      this.body.position.x = -cen.x * sc; this.body.position.z = -cen.z * sc;
+    }
     this.baseBodyY = this.body.position.y;
     this.height = size.y * sc;
     this.length = size.z * sc;
@@ -750,7 +775,10 @@
     all.forEach(function (m) { m.transparent = o < 1; m.opacity = o; m.depthWrite = o > 0.5; });
   };
   Actor.prototype.chestWorld = function () {
-    return this.root.localToWorld(this.chestLocal.clone());
+    var c = this.chestLocal.clone();
+    var down = this.hold === 'faint' || this.hold === 'kneel' || (this.action && (this.action.name === 'faint' || this.action.name === 'kneel'));
+    if (down) { c.y = this.baseBodyY + this.height * 0.22; c.z = 0; }
+    return this.root.localToWorld(c);
   };
   Actor.prototype.faceTo = function (x, z) {
     this.root.rotation.y = Math.atan2(x - this.root.position.x, z - this.root.position.z);
@@ -891,6 +919,7 @@
   };
 
   Actor.prototype.applyPose = function (P, dt) {
+    if (this.isGLB) return this.applyGLB(P, dt);
     var t = this.t;
     function R(g, dx, dy, dz) {
       if (!g) return;
@@ -953,10 +982,171 @@
     this.root.traverse(function (x) {
       if (x.geometry) x.geometry.dispose();
     });
+    if (this.isGLB) {
+      if (this.mixer) this.mixer.stopAllAction();
+      this.glbMats.forEach(function (m) { m.dispose(); });
+      if (this.root.parent) this.root.parent.remove(this.root);
+      return;
+    }
     var m = this.mats;
     Object.keys(m).forEach(function (k) { if (m[k]) m[k].dispose(); });
     if (this.root.parent) this.root.parent.remove(this.root);
   };
+
+  /* =============================================================
+     Modelos externos .glb (por ejemplo Quaternius, CC0)
+     ============================================================= */
+  var GLB = { loaded: {}, waiting: {}, failed: {} };
+  function cfgFor(id) { return (DC.MODEL_FILES || {})[id]; }
+  GLB.has = function (id) { return !!cfgFor(id); };
+  GLB.get = function (id) { return GLB.loaded[id] || null; };
+  GLB.load = function (id) {
+    var cfg = cfgFor(id);
+    if (!cfg || !T.GLTFLoader || GLB.failed[id]) return Promise.resolve(null);
+    if (GLB.loaded[id]) return Promise.resolve(GLB.loaded[id]);
+    if (GLB.waiting[id]) return GLB.waiting[id];
+    GLB.waiting[id] = new Promise(function (res) {
+      var loader = new T.GLTFLoader();
+      loader.load(cfg.file, function (gltf) {
+        var entry = { gltf: gltf, cfg: cfg };
+        GLB.loaded[id] = entry;
+        if (DC.onModelLoaded) DC.onModelLoaded(id);
+        res(entry);
+      }, undefined, function () { GLB.failed[id] = true; res(null); });
+    });
+    return GLB.waiting[id];
+  };
+  /* Espera el modelo como máximo ms milisegundos (si no, se usa el procedural) */
+  GLB.ready = function (id, ms) {
+    if (!GLB.has(id) || GLB.loaded[id] || GLB.failed[id]) return Promise.resolve();
+    return Promise.race([GLB.load(id), new Promise(function (r) { setTimeout(r, ms || 2500); })]);
+  };
+  GLB.preloadAll = function () {
+    var ids = Object.keys(DC.MODEL_FILES || {});
+    return ids.reduce(function (pr, id) { return pr.then(function () { return GLB.load(id); }); }, Promise.resolve());
+  };
+
+  var CLIP_WORDS = {
+    idle: /idle/i, walk: /walk/i, run: /run|gallop/i, attack: /attack|bite|headbutt/i,
+    death: /death|die|dead/i, jump: /jump/i, hit: /hit|hurt|damage|recieve|receive/i, roar: /roar|scream|howl/i
+  };
+  function mapClips(clips, cfg) {
+    var out = {}, named = cfg.clips || {};
+    Object.keys(CLIP_WORDS).forEach(function (k) {
+      var c = named[k] ? clips.find(function (x) { return x.name === named[k]; }) : null;
+      if (!c) c = clips.find(function (x) { return CLIP_WORDS[k].test(x.name); });
+      if (c) out[k] = c;
+    });
+    if (!out.idle && clips.length) out.idle = clips[0];
+    return out;
+  }
+
+  function buildFromGLB(a, entry) {
+    var src = entry.gltf.scene;
+    var model = T.SkeletonUtils ? T.SkeletonUtils.clone(src) : src.clone(true);
+    model.rotation.y = entry.cfg.rotY || 0;
+    var wrap = grp(0, 0, 0, a.body);
+    wrap.add(model);
+    var mats = [];
+    var gold = new T.Color('#f2c14e');
+    model.traverse(function (o) {
+      if (!o.isMesh) return;
+      o.castShadow = true;
+      o.frustumCulled = false;
+      var list = Array.isArray(o.material) ? o.material : [o.material];
+      list = list.map(function (m) {
+        var c = m.clone();
+        if (!c.emissive) c.emissive = new T.Color(0, 0, 0);
+        /* El juego trabaja en espacio lineal: se ajustan colores y metal del glTF */
+        if (!entry.cfg.keepMaterials) {
+          if (c.color) c.color.convertLinearToSRGB();
+          if (c.map) { c.map.encoding = T.LinearEncoding; c.map.needsUpdate = true; }
+          if (c.metalness !== undefined) c.metalness = 0.05;
+          if (c.roughness !== undefined) c.roughness = Math.max(0.65, c.roughness);
+          c.needsUpdate = true;
+        }
+        if (o.isSkinnedMesh) c.skinning = true;
+        if (a.golden) {
+          if (c.color) c.color.lerp(gold, 0.78);
+          c.metalness = 0.7; c.roughness = 0.35;
+          c.emissive = new T.Color('#4a2f00'); c.emissiveIntensity = 0.5;
+        }
+        mats.push(c);
+        return c;
+      });
+      o.material = Array.isArray(o.material) ? list : list[0];
+    });
+    a.isGLB = true;
+    a.glbMats = mats;
+    a.flashMats = mats;
+    a.mats = {};
+    a.model = model;
+    a.mixer = new T.AnimationMixer(model);
+    a.clips = mapClips(entry.gltf.animations || [], entry.cfg);
+    a.acts = {};
+    a.curClip = null;
+    a.setClip('idle');
+    a.mixer.update(0);
+  }
+
+  Actor.prototype.setClip = function (name, o) {
+    o = o || {};
+    var clip = this.clips[name] || this.clips.idle;
+    if (!clip) return;
+    var act = this.acts[clip.name] || (this.acts[clip.name] = this.mixer.clipAction(clip));
+    act.timeScale = o.speed || 1;
+    if (o.once) { act.setLoop(T.LoopOnce, 1); act.clampWhenFinished = true; }
+    else act.setLoop(T.LoopRepeat, Infinity);
+    if (this.curAct === act && !o.restart) return;
+    var prev = this.curAct;
+    act.reset();
+    act.paused = false;
+    act.setEffectiveWeight(1);
+    act.play();
+    if (prev && prev !== act) prev.crossFadeTo(act, o.fade === undefined ? 0.18 : o.fade, false);
+    this.curAct = act;
+    this.curName = name;
+  };
+
+  /* Elige la animación del archivo según la acción del juego */
+  Actor.prototype.applyGLB = function (P, dt) {
+    var A = this.action, want = 'idle', o = {};
+    var dur = A ? A.dur : 1;
+    var len = function (k, c) { c = c || this.clips[k] || this.clips.idle; return c ? c.duration : 1; }.bind(this);
+    if (A) {
+      var n = A.name;
+      if (n === 'roar') { want = this.clips.roar ? 'roar' : 'attack'; o = { once: true, speed: len(want) / dur * 0.9 }; }
+      else if (n === 'attack' || n === 'strike' || n === 'special') { want = 'attack'; o = { once: true, speed: Math.max(0.6, len('attack') / dur) }; }
+      else if (n === 'windup') { want = 'idle'; o = { speed: 0.35 }; }
+      else if (n === 'hit') { want = this.clips.hit ? 'hit' : 'idle'; o = { speed: 1.6 }; }
+      else if (n === 'dodge') { want = this.clips.run ? 'run' : 'walk'; o = { speed: 1.4 }; }
+      else if (n === 'faint' || n === 'kneel') { want = 'death'; o = { once: true, speed: len('death') / dur }; }
+      else if (n === 'flee') { want = this.clips.run ? 'run' : 'walk'; }
+      else if (n === 'celebrate') { want = this.clips.jump ? 'jump' : 'attack'; o = { speed: 1.1 }; }
+      else want = 'idle';
+      if (A.glbStarted !== true) { A.glbStarted = true; o.restart = true; }
+    } else if (this.hold === 'faint' || this.hold === 'kneel') {
+      want = 'death'; o = { once: true };
+    } else if (this.walk > 0) {
+      want = 'walk';
+    }
+    if (want !== this.curName || o.restart) this.setClip(want, o);
+    else if (o.speed && this.curAct) this.curAct.timeScale = o.speed;
+    /* Agotado: el cuerpo queda a medio caer (no muerto) */
+    if (this.curName === 'death' && (this.hold === 'kneel' || (A && A.name === 'kneel')) && this.curAct) {
+      var stop = len('death') * 0.97;
+      if (this.curAct.time >= stop) { this.curAct.time = stop; this.curAct.paused = true; }
+    }
+    /* Los desplazamientos (embestida, retroceso, esquiva, escala) se suman al clip */
+    var shake = P.shake ? (Math.random() - 0.5) * P.shake : 0;
+    var flyFaint = 0;
+    this.inner.position.set(P.x + shake, Math.max(-0.3, P.y), P.z);
+    this.inner.rotation.set(P.rotX, P.rotY, this.hold || (A && (A.name === 'faint' || A.name === 'kneel')) ? 0 : P.rotZ * 0.5 + flyFaint);
+    this.inner.scale.setScalar(P.scale);
+    this.mixer.update(dt);
+  };
+
+  DC.GLB = GLB;
 
   /* =============================================================
      Dinoesfera de ámbar
@@ -984,6 +1174,7 @@
     Actor: Actor,
     makeSphere: makeSphere,
     setLite: function (v) { lite = !!v; },
+    skinnedBox: skinnedBox,
     segGeom: segGeom
   };
 })();

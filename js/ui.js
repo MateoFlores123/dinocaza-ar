@@ -401,6 +401,7 @@
       '<button class="btn ghost small" data-act="dev-spheres">+10 Dinoesferas y +500 monedas</button>' +
       '<button class="btn ghost small" data-act="panel">' + icon('chart') + 'Panel Dino Park</button>' +
       '<button class="btn danger small" data-act="reset">Borrar progreso</button></div>' +
+      '<p class="muted" style="font-size:.75rem;text-align:center">' + esc(DC.MODEL_CREDIT || '') + '</p>' +
       '</div>', { onClose: function () { var n = $('#set-name'); } });
   }
 

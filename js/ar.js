@@ -423,10 +423,11 @@
      Retratos 3D para el álbum (renderer pequeño aparte)
      ===================================================================== */
   var pr = null, prScene = null, prCam = null, cache = {};
-  var PKEY = 'dinocaza_portrait_v4_';
+  var PKEY = 'dinocaza_portrait_v5_';
   DC.portrait = function (spId) {
-    if (cache[spId]) return cache[spId];
-    try { var saved = localStorage.getItem(PKEY + spId); if (saved) { cache[spId] = saved; return saved; } } catch (e) {}
+    var key = spId + (DC.GLB.get(spId) ? '_glb' : '');
+    if (cache[key]) return cache[key];
+    try { var saved = localStorage.getItem(PKEY + key); if (saved) { cache[key] = saved; return saved; } } catch (e) {}
     if (!pr) {
       pr = new T.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
       pr.setSize(200, 200); pr.setPixelRatio(1);
@@ -440,7 +441,7 @@
     prScene.add(a.root);
     for (var i = 0; i < 4; i++) a.update(0.02);
     a.root.updateMatrixWorld(true);
-    var box = new T.Box3().setFromObject(a.root);
+    var box = a.isGLB ? DC.Models.skinnedBox(a.root) : new T.Box3().setFromObject(a.root);
     var c = box.getCenter(new T.Vector3()), sz = box.getSize(new T.Vector3());
     var dist = Math.max(sz.x, sz.y, sz.z) * 1.75;
     prCam.position.set(c.x + dist * 0.15, c.y + dist * 0.18, c.z + dist);
@@ -448,10 +449,10 @@
     pr.render(prScene, prCam);
     var url = pr.domElement.toDataURL('image/webp', 0.85);
     if (url.indexOf('data:image/webp') !== 0) url = pr.domElement.toDataURL('image/png');
-    try { localStorage.setItem(PKEY + spId, url); } catch (e) {}
+    try { localStorage.setItem(PKEY + key, url); } catch (e) {}
     prScene.remove(a.root);
     a.dispose();
-    cache[spId] = url;
+    cache[key] = url;
     return url;
   };
 

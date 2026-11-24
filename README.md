@@ -44,6 +44,21 @@ Abre `qr-zonas.html` (en tu dirección publicada), pega la URL pública y genera
 | **Fichas educativas** | Texto niño / adulto (hallazgo E4), medidas reales, dato curioso, ventajas de tipo y pregunta con premio. |
 | **Recompensas** | XP y niveles con títulos, Dino-monedas, medallas, tienda de objetos y **premios reales** con código + QR validable en caja. |
 
+### Modelos 3D profesionales (.glb)
+T. rex, Triceratops, Velociraptor, Stegosaurus y Parasaurolophus usan los modelos animados del **Animated Dinosaur Pack de Quaternius** (licencia **CC0**: uso libre, sin pedir permiso). Están en `models/` y traen animaciones de quieto, caminar, correr, atacar, saltar y morir, que el juego usa para aparecer, pelear, recibir golpes, quedar agotado y huir. Las demás especies siguen con el modelo generado por código hasta que se les agregue un archivo.
+
+**Agregar o cambiar un modelo:**
+1. Descarga el modelo en formato **glTF Binary (.glb)**, idealmente de menos de 5 MB y menos de 30 000 triángulos (Sketchfab con licencia CC0/CC-BY, Quaternius, Poly Pizza o hecho en Blender).
+2. Ponlo en `models/`, por ejemplo `models/Spinosaurus.glb`.
+3. Añade una línea en `DC.MODEL_FILES` al final de `js/data.js`:
+   ```js
+   spinosaurus: { file: 'models/Spinosaurus.glb' },
+   ```
+   Opcional: `rotY: Math.PI` si el modelo mira hacia atrás, y `clips: { attack: 'NombreDeSuAnimacion' }` si sus animaciones no se llaman *idle / walk / run / attack / death / jump*.
+4. Si la licencia es CC-BY, agrega el autor en `DC.MODEL_CREDIT`.
+
+La acción `.github/workflows/fetch-models.yml` vuelve a descargar los modelos de Quaternius si se borran (pestaña *Actions → Descargar modelos 3D → Run workflow*).
+
 ## 3. Mecánicas para que la gente vuelva
 
 1. **Intentos limitados:** 10 Dinoesferas por visita (+1 por cada visita anterior, hasta +5). Con monedas se compran máx. 6 más por visita.
@@ -71,7 +86,8 @@ js/ui.js              Pantallas: mapa, álbum, equipo, pasaporte, premios, ajust
 js/encounter.js       Encuentro, pelea, captura, QR y modo foto
 js/main.js            Arranque
 sw.js, manifest       App instalable y modo sin internet
-vendor/               Three.js r128 y generador de QR (copia local)
+vendor/               Three.js r128, GLTFLoader, SkeletonUtils y generador de QR (copia local)
+models/               Dinosaurios animados .glb (Quaternius, CC0)
 qr-zonas.html         Hoja imprimible de QR para los letreros
 ```
 

@@ -54,6 +54,14 @@
       visitCheck(false);
       zoneFromHash();
     }
+    /* Modelos 3D externos: se cargan en segundo plano; al llegar, se refrescan los retratos */
+    var refreshT = null;
+    DC.onModelLoaded = function (id) {
+      document.querySelectorAll('img[data-sp="' + id + '"]').forEach(function (im) { im.removeAttribute('src'); });
+      clearTimeout(refreshT);
+      refreshT = setTimeout(function () { DC.UI.fillPortraits(document); }, 150);
+    };
+    setTimeout(function () { DC.GLB.preloadAll(); }, 400);
     if (!s.onboarded) DC.UI.onboarding(enter);
     else enter();
     window.addEventListener('hashchange', zoneFromHash);
