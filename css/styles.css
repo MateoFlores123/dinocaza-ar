@@ -807,3 +807,13 @@ h1 { font-size: 1.6rem; }
 .onb-hero .eyebrow.light { color: #bfe8d0; }
 .segtabs { display: grid; grid-template-columns: repeat(4, 1fr); }
 .segtabs button { font-size: 0.82rem; padding-inline: 4px; }
+/* Mapa del menú: la escena del parque vista desde arriba */
+.map3d { overflow: hidden; touch-action: none; }
+.map3d canvas { position: absolute; inset: 0; width: 100% !important; height: 100% !important; display: block; }
+.map-pins { position: absolute; inset: 0; pointer-events: none; }
+.mpin { position: absolute; left: 0; top: 0; pointer-events: auto; display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px 4px 4px; border: 0; border-radius: 99px; background: #fff; color: var(--ink); font: 900 0.74rem var(--font-body); box-shadow: 0 3px 10px rgba(22, 48, 42, 0.25); white-space: nowrap; }
+.mpin i { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; background: var(--zc); color: #fff; font-style: normal; font-size: 0.7rem; }
+.mpin::after { content: ''; position: absolute; left: 50%; bottom: -5px; width: 10px; height: 10px; margin-left: -5px; background: #fff; transform: rotate(45deg); z-index: -1; }
+.mpin.me { pointer-events: none; background: var(--ink); color: #fff; }
+.mpin.me i { background: var(--sun); }
+.mpin.me::after { background: var(--ink); }

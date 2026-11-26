@@ -267,7 +267,11 @@ DC.ZONES = [
   { id: 4, name: 'Cumbre de los Pterosaurios', short: 'Cumbre', glyph: 'wing', color: '#7fb6f0', x: 258, y: 190,
     desc: 'El mirador más alto del parque. Mira hacia el cielo: aquí planean los reptiles voladores.' },
   { id: 5, name: 'Guarida del Rey', short: 'Guarida', glyph: 'crown', color: '#f4b638', x: 160, y: 104,
-    desc: 'La zona a los pies del volcán. Aquí viven los gigantes. El T. rex solo se deja ver a exploradores veteranos.' }
+    desc: 'La zona a los pies del volcán. Aquí viven los gigantes. El T. rex solo se deja ver a exploradores veteranos.' },
+  { id: 6, name: 'Desierto de los Fósiles', short: 'Desierto', glyph: 'bone', color: '#e0a85a', x: 300, y: 300,
+    desc: 'Dunas, cactus y un esqueleto gigante a medio excavar. Los acorazados y los cazadores del desierto viven aquí.' },
+  { id: 7, name: 'Glaciar Navideño', short: 'Glaciar', glyph: 'snow', color: '#8fd3ff', x: 40, y: 150,
+    desc: 'Hielo, muñecos de nieve y luces de Navidad. Es el hogar favorito de los especiales navideños.' }
 ];
 
 /* ---------------------------------------------------------------------
@@ -417,6 +421,7 @@ DC.MEDALS = [
    --------------------------------------------------------------------- */
 DC.MODEL_CREDIT = 'Modelos 3D animados: Quaternius · Animated Dinosaur Pack (CC0)';
 DC.MODEL_FILES = {
+  brachiosaurus:   { file: 'models/Apatosaurus.glb' },
   trex:            { file: 'models/Trex.glb' },
   triceratops:     { file: 'models/Triceratops.glb' },
   velociraptor:    { file: 'models/Velociraptor.glb' },
@@ -431,29 +436,37 @@ DC.MODEL_FILES = {
    Ajustar estas posiciones al plano real de Dino Park.
    --------------------------------------------------------------------- */
 DC.PARK = {
-  unit: 2, radius: 78, entrance: { x: 0, z: 68 },
-  zones: { 1: { x: -40, z: 22, r: 11 }, 2: { x: -46, z: -18, r: 11 }, 3: { x: -12, z: -50, r: 11 }, 4: { x: 34, z: -42, r: 11 }, 5: { x: 48, z: 8, r: 12 } }
+  unit: 2, radius: 118, entrance: { x: 0, z: 114 },
+  zones: {
+    1: { x: -51, z: 61, r: 17 },  /* Valle */
+    2: { x: -80, z: 4, r: 18 },   /* Bosque */
+    3: { x: -59, z: -55, r: 18 }, /* Laguna */
+    4: { x: 59, z: -55, r: 17 },  /* Cumbre */
+    5: { x: 80, z: 4, r: 18 },    /* Guarida */
+    6: { x: 51, z: 61, r: 17 },   /* Desierto */
+    7: { x: 0, z: -82, r: 19 }    /* Glaciar */
+  }
 };
 /* Lugares del parque que aparecen al caminar */
 DC.PLACES = [
-  { id: 'entrada', name: 'Entrada y boletería', kind: 'gate', x: 0, z: 66, desc: 'Aquí empieza la aventura. Escanea el QR de tu entrada.', prize: 'entrada20' },
-  { id: 'canchita', name: 'Canchita', kind: 'stand', x: -7, z: 54, color: '#ff5a4e', prop: 'popcorn', desc: 'Canchita dulce y salada recién hecha.', prize: 'canchita' },
-  { id: 'helado', name: 'Heladería', kind: 'stand', x: -7, z: 43, color: '#ff7fb0', prop: 'icecream', desc: 'Helados de frutas de Arequipa. Aquí se canjea el helado de cada dinosaurio único.', prize: 'helado' },
-  { id: 'comida', name: 'Comida rápida', kind: 'stand', x: -7, z: 32, color: '#ff9a2e', prop: 'burger', desc: 'Hamburguesas, salchipapas y anticuchos.' },
-  { id: 'juguera', name: 'Juguería', kind: 'stand', x: 7, z: 54, color: '#2fb36b', prop: 'juice', desc: 'Jugos y refrescos para seguir caminando.' },
-  { id: 'tienda', name: 'Tienda de recuerdos', kind: 'stand', x: 7, z: 43, color: '#8a63ff', prop: 'plush', desc: 'Peluches, figuras y stickers de dinosaurios.', prize: 'peluche' },
-  { id: 'fotos', name: 'Punto de fotos', kind: 'stand', x: 7, z: 32, color: '#39b6ff', prop: 'camera', desc: 'Llévate tu foto impresa con tu dinosaurio favorito.', prize: 'foto' },
-  { id: 'juegos', name: 'Juegos infantiles', kind: 'playground', x: -26, z: 46, desc: 'Toboganes, columpios y la zona de juegos. Aquí se canjea tu juego gratis.', prize: 'juego' },
-  { id: 'parrillas', name: 'Área de parrillas', kind: 'bbq', x: 28, z: 42, desc: 'Mesas y parrillas para compartir en familia.' },
-  { id: 'vr', name: 'Realidad virtual', kind: 'vr', x: 20, z: -14, desc: 'Ponte los lentes y vuela con los pterosaurios.' }
+  { id: 'entrada', name: 'Entrada y boletería', kind: 'gate', x: 0, z: 121, desc: 'Aquí empieza la aventura. Escanea el QR de tu entrada.', prize: 'entrada20' },
+  { id: 'canchita', name: 'Canchita', kind: 'stand', x: -8, z: 96, color: '#ff5a4e', prop: 'popcorn', desc: 'Canchita dulce y salada recién hecha.', prize: 'canchita' },
+  { id: 'helado', name: 'Heladería', kind: 'stand', x: -8, z: 84, color: '#ff7fb0', prop: 'icecream', desc: 'Helados de frutas de Arequipa. Aquí se canjea el helado de cada dinosaurio único.', prize: 'helado' },
+  { id: 'comida', name: 'Comida rápida', kind: 'stand', x: -8, z: 72, color: '#ff9a2e', prop: 'burger', desc: 'Hamburguesas, salchipapas y anticuchos.' },
+  { id: 'juguera', name: 'Juguería', kind: 'stand', x: 8, z: 96, color: '#2fb36b', prop: 'juice', desc: 'Jugos y refrescos para seguir caminando.' },
+  { id: 'tienda', name: 'Tienda de recuerdos', kind: 'stand', x: 8, z: 84, color: '#8a63ff', prop: 'plush', desc: 'Peluches, figuras y stickers de dinosaurios.', prize: 'peluche' },
+  { id: 'fotos', name: 'Punto de fotos', kind: 'stand', x: 8, z: 72, color: '#39b6ff', prop: 'camera', desc: 'Llévate tu foto impresa con tu dinosaurio favorito.', prize: 'foto' },
+  { id: 'juegos', name: 'Juegos infantiles', kind: 'playground', x: -26, z: 84, desc: 'Toboganes, columpios y la zona de juegos. Aquí se canjea tu juego gratis.', prize: 'juego' },
+  { id: 'parrillas', name: 'Área de parrillas', kind: 'bbq', x: 27, z: 86, desc: 'Mesas y parrillas para compartir en familia.' },
+  { id: 'vr', name: 'Realidad virtual', kind: 'vr', x: 24, z: -24, desc: 'Ponte los lentes y vuela con los pterosaurios.' }
 ];
 /* Réplicas reales del parque: se reconocen con la cámara y son jefes */
 DC.REPLICAS = [
-  { id: 'rep_tricera', sp: 'triceratops', name: 'Gran Triceratops', zone: 1, x: -44, z: 26, desc: 'La réplica a tamaño real del Valle.' },
-  { id: 'rep_raptor', sp: 'velociraptor', name: 'Manada de Raptores', zone: 2, x: -50, z: -14, desc: 'Las réplicas escondidas entre los helechos.' },
-  { id: 'rep_spino', sp: 'spinosaurus', name: 'Spinosaurus de la Laguna', zone: 3, x: -16, z: -54, desc: 'La gran vela que se ve desde el lago.' },
-  { id: 'rep_ptera', sp: 'pteranodon', name: 'Pteranodon del Mirador', zone: 4, x: 38, z: -46, desc: 'Vigila desde lo alto de la cumbre.' },
-  { id: 'rep_trex', sp: 'trex', name: 'T. rex Gigante', zone: 5, x: 52, z: 12, desc: 'La réplica más grande del parque. ¿Te atreves?' }
+  { id: 'rep_tricera', sp: 'triceratops', name: 'Gran Triceratops', zone: 1, x: -42, z: 50, desc: 'La réplica a tamaño real del Valle.' },
+  { id: 'rep_raptor', sp: 'velociraptor', name: 'Manada de Raptores', zone: 2, x: -66, z: 4, desc: 'Las réplicas escondidas entre los helechos.' },
+  { id: 'rep_spino', sp: 'spinosaurus', name: 'Spinosaurus de la Laguna', zone: 3, x: -46, z: -42, desc: 'La gran vela que se ve desde el lago.' },
+  { id: 'rep_ptera', sp: 'pteranodon', name: 'Pteranodon del Mirador', zone: 4, x: 47, z: -43, desc: 'Vigila desde lo alto de la cumbre.' },
+  { id: 'rep_trex', sp: 'trex', name: 'T. rex Gigante', zone: 5, x: 66, z: 4, desc: 'La réplica más grande del parque. ¿Te atreves?' }
 ];
 DC.AVATAR_COLORS = { shirt: ['#2fb36b', '#39b6ff', '#ff6b57', '#8a63ff', '#ffc93c', '#ff7fb0'], skin: ['#f2c7a5', '#d9a273', '#b07a4f', '#7a4e30'] };
 
@@ -501,3 +514,7 @@ DC.AVATAR_HATS = [
 ];
 DC.AVATAR_COLORS.hair = ['#2b1a12', '#6b3e1f', '#c98a3c', '#e8d6a0'];
 DC.AVATAR_COLORS.pants = ['#3b4a5a', '#2f5d8a', '#6b4a32', '#2b2b2b'];
+
+/* Hábitats nuevos: especies que también aparecen ahí */
+DC.ZONE_EXTRA = { 6: ['ankylosaurus', 'carnotaurus', 'dilophosaurus', 'velociraptor'], 7: ['triceratops', 'stegosaurus', 'parasaurolophus', 'pteranodon'] };
+DC.inZone = function (sp, zoneId) { return sp.zone === zoneId || (DC.ZONE_EXTRA[zoneId] || []).indexOf(sp.id) >= 0; };

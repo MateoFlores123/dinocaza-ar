@@ -130,3 +130,13 @@ El progreso se guarda en el navegador de cada visitante. Para producción, el si
 - **Ambiente navideño**: nieve, gran árbol de Navidad con la Dinoesfera en la punta, regalos, faroles de bastón de caramelo con coronas y árboles con luces. También nieva en los encuentros.
 - **Especiales navideños** (Santa Rex, Tricera Reno, Raptor Duende, Stego Nevado, Parasauro Villancico, Ptera Estrella): llevan gorros, astas o estrella, son muy raros (7 % por encuentro en su hábitat, **máximo 1 por visita**) y más difíciles de capturar. Con los 6: +1500 Dino-puntos y un peluche.
 - **Dino-puntos y dificultad**: se ganan capturando, venciendo jefes y completando rutas, con **límite de 400 por día**. Los premios grandes (helado 700, juego 1100, foto 1600, peluche 3200) requieren varias visitas. Menos esferas por visita (6) y compra limitada (4).
+
+## Versión 6 · Gráficos
+
+- **Parque 3 veces más grande** con **7 hábitats** distintos: Valle (pradera con flores y cercas), Bosque (selva densa, helechos, hongos y luciérnagas), Laguna (agua animada, juncos, nenúfares y muelle), Cumbre (mesetas de roca por capas, mirador y nidos), Guarida (volcán con lava animada, humo y chispas), **Desierto de los Fósiles** (dunas, cactus y un esqueleto gigante) y **Glaciar Navideño** (hielo, iglú, muñecos de nieve, trineo y aurora).
+- Cielo con degradado y sol, nubes, volcanes de Arequipa al fondo, terreno pintado por bioma, caminos empedrados, plaza con mosaico y árbol de Navidad gigante con guirnalda.
+- Vegetación instanciada (miles de pastos, flores y árboles) que se mece con el viento.
+- **Avatar nuevo** estilo chibi con contorno: chaleco de explorador, mochila, cara expresiva; anima caminar, correr (joystick al borde o Shift), respirar, parpadear y mirar alrededor.
+- **Dinosaurios con comportamiento**: pastan, caminan levantando polvo, se dan vuelta y rugen cuando te acercas. Las réplicas del parque se ven como estatuas de piedra sobre pedestal. El Brachiosaurus usa un modelo animado (Apatosaurus de Quaternius).
+- El **mapa del menú** es la misma escena vista desde arriba (arrastrar para mover, rueda o pellizco para acercar).
+- Los **encuentros** se ambientan según el hábitat (nieve y árboles navideños en el glaciar, dunas y cactus en el desierto, lava en la guarida…).

@@ -139,11 +139,11 @@
 
   function rollXmas(zoneId) {
     if (!DC.SEASON.xmas || !S.visit) return null;
-    var left = DC.XMAS.filter(function (x) { return x.zone === zoneId && !S.xmas[x.id]; });
+    var left = DC.XMAS.filter(function (x) { return (x.zone === zoneId || zoneId === 7) && !S.xmas[x.id]; });
     var forced = DC.forceXmas ? DC.XMAS_BY[DC.forceXmas] : null;
     DC.forceXmas = null;
     if (forced) return forced;
-    if (!left.length || (S.visit.xmasSeen || 0) >= DC.XMAS_PER_VISIT || Math.random() > DC.XMAS_CHANCE) return null;
+    if (!left.length || (S.visit.xmasSeen || 0) >= DC.XMAS_PER_VISIT || Math.random() > DC.XMAS_CHANCE * (zoneId === 7 ? 2.5 : 1)) return null;
     return left[Math.floor(Math.random() * left.length)];
   }
   function rollEncounter(zoneId) {
@@ -159,8 +159,8 @@
       var pr = partner();
       return { sp: DC.SP[uq.sp], lvl: Math.max(2, Math.round(Math.max(S.level, pr ? pr.lvl : 1) + 2)), variant: uq.id, unique: uq };
     }
-    var pool = DC.SPECIES.filter(function (s) { return s.zone === zoneId && availability(s).ok; });
-    if (!pool.length) pool = DC.SPECIES.filter(function (s) { return s.zone === zoneId && !s.minVisits; });
+    var pool = DC.SPECIES.filter(function (s) { return DC.inZone(s, zoneId) && availability(s).ok; });
+    if (!pool.length) pool = DC.SPECIES.filter(function (s) { return DC.inZone(s, zoneId) && !s.minVisits; });
     var total = 0;
     var w = pool.map(function (s) {
       var x = DC.RARITY[s.rarity].weight;

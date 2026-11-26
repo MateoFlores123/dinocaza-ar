@@ -111,11 +111,11 @@
   function render() {
     renderTop(); renderTabs();
     var v = $('#view');
-    if (tab !== 'map' && DC.Map3D) DC.Map3D.unmount();
+    if (DC.Map3D) DC.Map3D.unmount();
     var fn = { map: viewMap, album: viewAlbum, team: viewTeam, passport: viewPassport, prizes: viewPrizes }[tab];
     v.className = 'view-' + tab;
     v.innerHTML = fn();
-    if (tab === 'map' && DC.Map3D) { try { DC.Map3D.mount($('#map3d')); } catch (e) { console.error(e); } }
+    if (tab === 'map' && DC.Map3D && !$('#screens').hidden) { try { DC.Map3D.mount($('#map3d')); } catch (e) { console.error(e); } }
     fillPortraits(v);
   }
   function go(t) { tab = t; render(); $('#view').scrollTop = 0; }
@@ -135,7 +135,7 @@
     var s = S(), v = s.visit;
     var done = v ? v.zones.length : 0;
     var steps = '';
-    for (var i = 0; i < 5; i++) steps += '<i class="' + (v && v.zones.indexOf(i + 1) >= 0 ? 'on' : '') + '"></i>';
+    for (var i = 0; i < DC.ZONES.length; i++) steps += '<i class="' + (v && v.zones.indexOf(i + 1) >= 0 ? 'on' : '') + '"></i>';
     var missions = v ? v.missions.map(function (m) {
       var def = DC.Store.missionDef(m.id); if (!def) return '';
       return '<div class="mission' + (m.done ? ' done' : '') + (m.claimed ? ' claimed' : '') + '"><div class="m-ic">' + icon(m.claimed ? 'check' : 'star') + '</div><div class="m-body"><b>' + esc(def.text) + '</b>' +
@@ -145,7 +145,7 @@
     var eggs = s.eggs.length ? '<div class="card egg-card"><div class="egg-shape" aria-hidden="true"></div><div><b>' + s.eggs.length + (s.eggs.length > 1 ? ' huevos incubando' : ' huevo incubando') + '</b><p class="muted">Eclosiona' + (s.eggs.length > 1 ? 'n' : '') + ' en tu próxima visita.</p></div></div>' : '';
     return '<div class="home">' +
       '<div class="map-card"><div class="map3d" id="map3d"></div>' +
-      '<div class="map-top"><span class="tag">Visita ' + (v ? v.n : 1) + '</span><span class="tag route"><span class="route-steps">' + steps + '</span>' + done + '/5 hoy</span></div></div>' +
+      '<div class="map-top"><span class="tag">Visita ' + (v ? v.n : 1) + '</span><span class="tag route"><span class="route-steps">' + steps + '</span>' + done + '/' + DC.ZONES.length + ' hoy</span></div></div>' +
       '<p class="note">' + icon('pin') + '<span>El mapa es para mirar. Para atrapar dinosaurios, <b>camina hasta el hábitat</b> con tu avatar.</span></p>' +
       xmasStrip() +
       '<div class="section-title"><h2>Misiones de hoy</h2><span class="muted">Las 3: +3 esferas</span></div>' +
@@ -171,7 +171,7 @@
     var xm = DC.SEASON.xmas ? DC.XMAS.filter(function (x) { return x.zone === zid; }) : [];
     var xs = xm.length ? '<div class="uniq-strip">' + xm.map(function (x) { var got = s.xmas[x.id]; return '<span class="u-chip xm' + (got ? ' got' : '') + '">' + icon('snow') + (got ? esc(x.name) : 'Especial navideño') + '</span>'; }).join('') + '</div>' : '';
     var here = s.visit && s.visit.zones.indexOf(zid) >= 0;
-    return modal('<div class="zone-hero" style="--zc:' + z.color + '"><div class="eyebrow">Hábitat ' + z.id + ' de 5</div><h2>' + esc(z.name) + '</h2><p>' + esc(z.desc) + '</p>' +
+    return modal('<div class="zone-hero" style="--zc:' + z.color + '"><div class="eyebrow">Hábitat ' + z.id + ' de ' + DC.ZONES.length + '</div><h2>' + esc(z.name) + '</h2><p>' + esc(z.desc) + '</p>' +
       '<button class="icon-btn soft" data-act="close" aria-label="Cerrar">' + icon('close') + '</button></div>' +
       list + uq + xs +
       '<div class="stack" style="margin-top:16px">' +
@@ -367,10 +367,10 @@
     var codes = s.codes.length ? s.codes.map(function (c) {
       return '<button class="code-card' + (c.redeemed ? ' used' : '') + '" data-act="showcode" data-code="' + c.code + '"><span class="cc-art">' + prizeArt(c.prize || 'sticker') + '</span><span class="cc-body"><b>' + esc(c.label) + '</b><span class="code mono">' + c.code + '</span><small>' + esc(c.source) + '</small></span>' +
         '<span class="cc-state">' + (c.redeemed ? 'Canjeado' : icon('qr')) + '</span></button>';
-    }).join('') : '<p class="muted empty-line">Aún no tienes premios. Junta Dino-puntos o completa la ruta de los 5 hábitats.</p>';
+    }).join('') : '<p class="muted empty-line">Aún no tienes premios. Junta Dino-puntos o completa la ruta de todos los hábitats.</p>';
     var P = DC.POINTS;
     var earn = [['Capturar (común · rara · épica · legendaria)', P.capture.comun + ' · ' + P.capture.rara + ' · ' + P.capture.epica + ' · ' + P.capture.legendaria],
-      ['Dinosaurio de color', '+' + P.variant], ['Dinosaurio único', '+' + P.unique], ['Especial navideño', '+' + P.xmas], ['Vencer a un jefe (réplica)', '+' + P.boss], ['Ruta de los 5 hábitats', '+' + P.route],
+      ['Dinosaurio de color', '+' + P.variant], ['Dinosaurio único', '+' + P.unique], ['Especial navideño', '+' + P.xmas], ['Vencer a un jefe (réplica)', '+' + P.boss], ['Ruta de todos los hábitats', '+' + P.route],
       ['Colección navideña completa', '+' + P.xmasAll + ' (sin límite)']].map(function (r) { return '<div class="earn-row"><span>' + r[0] + '</span><b class="num">' + r[1] + '</b></div>'; }).join('');
     return '<div class="stack">' +
       '<div class="wallet"><div class="eyebrow">Tus Dino-puntos</div><div class="wallet-num"><span class="pt-big">★</span><b class="num">' + s.points + '</b></div>' +
@@ -434,11 +434,11 @@
     host.appendChild(r.domElement);
     var sc = new T.Scene(); sc.add(new T.HemisphereLight('#ffffff', '#8a9a7a', 1.0));
     var dl = new T.DirectionalLight('#ffffff', 0.8); dl.position.set(2, 4, 3); sc.add(dl);
-    var cam = new T.PerspectiveCamera(30, w / h, 0.1, 50); cam.position.set(0, 1.55, 6.2); cam.lookAt(0, 1.3, 0);
+    var cam = new T.PerspectiveCamera(30, w / h, 0.1, 50); cam.position.set(0, 1.55, 5.3); cam.lookAt(0, 1.32, 0);
     var base = new T.Mesh(new T.CylinderGeometry(0.9, 0.9, 0.08, 32), new T.MeshStandardMaterial({ color: '#eef4f1' })); base.position.y = -0.04; sc.add(base);
     var av = null, alive = true, t0 = performance.now();
-    function set(a) { if (av) sc.remove(av); av = DC.Walk.buildAvatar(a, true); sc.add(av); }
-    (function loop() { if (!alive) return; requestAnimationFrame(loop); var t = (performance.now() - t0) / 1000; if (av) { av.rotation.y = Math.sin(t * 0.8) * 0.6; av.userData.body.position.y = Math.abs(Math.sin(t * 2)) * 0.04; av.userData.arms[1].rotation.z = Math.sin(t * 3) * 0.15 + 0.15; } r.render(sc, cam); })();
+    function set(a) { if (av) sc.remove(av); av = DC.Avatar.build(a, true); sc.add(av); }
+    var last = performance.now(); (function loop() { if (!alive) return; requestAnimationFrame(loop); var now = performance.now(), dt = Math.min(0.05, (now - last) / 1000); last = now; var t = (now - t0) / 1000; if (av) { av.rotation.y = Math.sin(t * 0.7) * 0.55; DC.Avatar.animate(av, 0, dt, t); } r.render(sc, cam); })();
     return { set: set, dispose: function () { alive = false; r.dispose(); } };
   }
   function avatarForm(a) {

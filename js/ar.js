@@ -97,12 +97,57 @@
   R.resize = resize;
 
   /* ---------------- Modo AR / 3D ---------------- */
+  /* Ambientación del encuentro según el hábitat (en el modo parque 3D) */
+  var themeG = null;
+  R.setTheme = function (zid) {
+    if (!env) return;
+    if (themeG) { env.remove(themeG); themeG.traverse(function (o) { if (o.geometry) o.geometry.dispose(); }); }
+    themeG = new T.Group(); env.add(themeG);
+    var th = { 1: { g: null, tint: '#ffffff', fog: '#e9cfa4' }, 2: { g: null, tint: '#9cc59a', fog: '#cfe0c2' }, 3: { g: null, tint: '#e2ecc0', fog: '#d8e8ea' },
+      4: { g: '#c7a27a', fog: '#e8d3b4' }, 5: { g: '#4a3c37', fog: '#b99a86' }, 6: { g: '#e8c88c', fog: '#f1dcb1' }, 7: { g: '#f2f7fb', fog: '#e4f0f8' } }[zid] || { tint: '#ffffff', fog: '#e9cfa4' };
+    var gm = R.grass.material;
+    if (th.g) { gm.map = null; gm.color.set(th.g); } else { gm.map = R.grassMap; gm.color.set(th.tint || '#ffffff'); }
+    gm.needsUpdate = true;
+    R.fogColor = th.fog; if (R.scene.fog) R.scene.fog.color.set(th.fog);
+    function m(c, o) { o = o || {}; return new T.MeshStandardMaterial({ color: c, roughness: o.r === undefined ? 0.85 : o.r, metalness: o.m || 0, flatShading: true, emissive: o.em || '#000000', emissiveIntensity: o.ei || 0, transparent: !!o.op, opacity: o.op || 1 }); }
+    function put(mesh, a, d, y) { mesh.position.set(Math.cos(a) * d, y || 0, Math.sin(a) * d); mesh.castShadow = true; mesh.receiveShadow = true; themeG.add(mesh); return mesh; }
+    var r = function () { return Math.random(); };
+    if (zid === 7) {
+      for (var i = 0; i < 14; i++) put(new T.Mesh(new T.SphereGeometry(1, 12, 8, 0, 6.29, 0, 1.57), m('#ffffff', { r: 1 })), r() * 6.28, 11 + r() * 22).scale.set(2 + r() * 3, 0.6 + r(), 2 + r() * 3);
+      for (var k = 0; k < 16; k++) { var ic = put(new T.Mesh(new T.OctahedronGeometry(0.6, 0), m('#bfe9ff', { r: 0.15, op: 0.85, em: '#4fb6ff', ei: 0.3 })), r() * 6.28, 10 + r() * 20, 1); ic.scale.set(0.7, 1.6 + r() * 2, 0.7); }
+      var bulbs = ['#ff4d4d', '#ffd23f', '#4dc3ff', '#7dff8a'];
+      for (var t = 0; t < 5; t++) { var a = r() * 6.28, d = 12 + r() * 14, tg = new T.Group(); tg.position.set(Math.cos(a) * d, 0, Math.sin(a) * d); themeG.add(tg);
+        [[1.8, 2.2, 2.3], [1.35, 1.9, 3.4], [0.9, 1.6, 4.4]].forEach(function (c) { var cn = new T.Mesh(new T.ConeGeometry(c[0], c[1], 8), m('#2f7a3f')); cn.position.y = c[2]; cn.castShadow = true; tg.add(cn); });
+        for (var b = 0; b < 10; b++) { var bl = new T.Mesh(new T.SphereGeometry(0.12, 6, 5), m(bulbs[b % 4], { em: bulbs[b % 4], ei: 1.2 })); var lv = r(); bl.position.set(Math.cos(b * 2.3) * (1.6 - lv * 1.2), 1.8 + lv * 2.8, Math.sin(b * 2.3) * (1.6 - lv * 1.2)); tg.add(bl); } }
+    } else if (zid === 6) {
+      for (var j = 0; j < 12; j++) put(new T.Mesh(new T.SphereGeometry(1, 14, 8, 0, 6.29, 0, 1.57), m('#e6c487', { r: 1 })), r() * 6.28, 14 + r() * 24).scale.set(4 + r() * 5, 1 + r() * 1.5, 3 + r() * 4);
+      for (var c2 = 0; c2 < 12; c2++) { var cg = new T.Group(), a2 = r() * 6.28, d2 = 10 + r() * 20; cg.position.set(Math.cos(a2) * d2, 0, Math.sin(a2) * d2); themeG.add(cg);
+        var tr = new T.Mesh(new T.CylinderGeometry(0.35, 0.4, 3, 8), m('#4c9a4f')); tr.position.y = 1.5; tr.castShadow = true; cg.add(tr);
+        var arm = new T.Mesh(new T.CylinderGeometry(0.2, 0.2, 1, 8), m('#55a858')); arm.position.set(0.6, 1.9, 0); cg.add(arm); }
+    } else if (zid === 5) {
+      for (var l = 0; l < 6; l++) { var lp = put(new T.Mesh(new T.CircleGeometry(1.5 + r() * 2, 18), m('#ff6a10', { em: '#ff4a10', ei: 1.4, r: 0.4 })), r() * 6.28, 11 + r() * 18, 0.05); lp.rotation.x = -Math.PI / 2; }
+      for (var q = 0; q < 18; q++) put(new T.Mesh(new T.DodecahedronGeometry(0.6 + r() * 1.4, 0), m('#2f2624')), r() * 6.28, 10 + r() * 24, 0.3);
+    } else if (zid === 3) {
+      var wa = new T.Mesh(new T.CircleGeometry(22, 48), m('#2e8fb0', { r: 0.1, m: 0.3 })); wa.rotation.x = -Math.PI / 2; wa.position.set(-30, 0.05, -14); themeG.add(wa);
+      for (var e = 0; e < 40; e++) { var ra = r() * 6.28, rd = 21 + r() * 2.5, rd2 = new T.Mesh(new T.CylinderGeometry(0.04, 0.05, 1.4 + r(), 4), m('#6f9a3a')); rd2.position.set(-30 + Math.cos(ra) * rd, 0.7, -14 + Math.sin(ra) * rd); themeG.add(rd2); }
+    } else if (zid === 4) {
+      var cols = ['#c49a6c', '#b0835a', '#d3ad7d'];
+      for (var n = 0; n < 7; n++) { var mg = new T.Group(), a3 = r() * 6.28, d3 = 16 + r() * 20; mg.position.set(Math.cos(a3) * d3, 0, Math.sin(a3) * d3); themeG.add(mg); var h = 0, rad = 3 + r() * 3;
+        for (var ly = 0; ly < 4; ly++) { var lh = 1.5 + r(); var cy = new T.Mesh(new T.CylinderGeometry(rad * (1 - ly * 0.08), rad * (1.04 - ly * 0.08), lh, 7), m(cols[ly % 3])); cy.position.y = h + lh / 2; cy.castShadow = true; mg.add(cy); h += lh; } }
+    } else if (zid === 2) {
+      for (var f = 0; f < 30; f++) { var fg = new T.Group(), a4 = r() * 6.28, d4 = 9 + r() * 16; fg.position.set(Math.cos(a4) * d4, 0, Math.sin(a4) * d4); themeG.add(fg);
+        for (var fr = 0; fr < 6; fr++) { var fl = new T.Mesh(new T.ConeGeometry(0.2, 1.6, 4), m('#3f9a4a')); fl.position.set(Math.cos(fr) * 0.5, 0.5, Math.sin(fr) * 0.5); fl.rotation.set(0, -fr, 1.0); fl.scale.z = 0.35; fg.add(fl); } }
+    } else if (zid === 1) {
+      var cl = ['#ff7aa8', '#ffd84d', '#ffffff', '#b18cff'];
+      for (var fw = 0; fw < 120; fw++) { var fm = put(new T.Mesh(new T.IcosahedronGeometry(0.14, 0), m(cl[fw % 4])), r() * 6.28, 9 + r() * 20, 0.3); }
+    }
+  };
   R.setMode = function (m) {
     R.mode = m;
     var ar = m === 'ar';
     env.visible = !ar;
     shadowPlane.visible = ar;
-    R.scene.fog = ar ? null : new T.Fog('#e9cfa4', 40, 330);
+    R.scene.fog = ar ? null : new T.Fog(R.fogColor || '#e9cfa4', 40, 330);
     R.video.hidden = !ar;
     R.stage.classList.toggle('is-ar', ar);
     hemi.intensity = ar ? 0.95 : 0.62;
@@ -322,6 +367,7 @@
       map: noiseTex('#5d7436', ['#48602a', '#6f8642', '#7f7a45', '#3c5224'], 256, 90, 9000), roughness: 1
     }));
     grass.rotation.x = -Math.PI / 2; grass.receiveShadow = true; env.add(grass);
+    R.grass = grass; R.grassMap = grass.material.map;
     /* Plaza circular de sillar (piedra volcánica blanca de Arequipa) */
     var plaza = new T.Mesh(new T.CircleGeometry(8.5, 48), new T.MeshStandardMaterial({ map: sillarTex(), color: '#b9b3a6', roughness: 0.95 }));
     plaza.rotation.x = -Math.PI / 2; plaza.position.y = 0.01; plaza.receiveShadow = true; env.add(plaza);

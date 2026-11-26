@@ -107,6 +107,7 @@
   function start(zoneId, opts) {
     if (st) cleanup();
     var s = S();
+    if (DC.AR.setTheme) { try { DC.AR.setTheme(zoneId); } catch (e) { console.warn(e); } }
     st = { zone: zoneId, opts: opts || {}, phase: 'scan', enemy: null, me: null, unsub: [], toasts: [], levelUps: [], rewards: [], appeared: false, outcome: null };
     showStage();
     hudBase();
@@ -733,7 +734,7 @@
       won: 'Lo dejaste ir. Ganaste experiencia igual.',
       boss: 'Derrotaste a la réplica de ' + (e.boss ? e.boss.name : '') + '. Vuelve en tu próxima visita para la revancha.'
     }[outcome] || '';
-    if (zr.first) st.rewards.push(['Zona explorada', s.visit.zones.length + '/5']);
+    if (zr.first) st.rewards.push(['Zona explorada', s.visit.zones.length + '/' + DC.ZONES.length]);
     if (zr.route) st.rewards.push(['¡Ruta del tesoro completa!', '+150 monedas y código']);
     var rw = st.rewards.map(function (r) { return '<li><span>' + U().esc(r[0]) + '</span><b class="num">' + U().esc(r[1]) + '</b></li>'; }).join('');
     var wrap = document.createElement('div');
@@ -763,7 +764,7 @@
       chain = chain.then(function () {
         return new Promise(function (r) {
           var c = S().codes.find(function (x) { return x.prize === 'canchita'; }) || S().codes[0];
-          U().prizeModal(c, r, '¡Recorriste las 5 zonas!');
+          U().prizeModal(c, r, '¡Recorriste los ' + DC.ZONES.length + ' hábitats!');
         });
       });
     }
