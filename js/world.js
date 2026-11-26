@@ -219,16 +219,16 @@
   }
   W.pathDist = pathDist;
   function paths() {
-    var tex = canvasTex(256, 256, cobble('#d9ccb0', '#efe6d2', 'rgba(120,96,64,0.55)'), [1, 12]);
+    var tex = canvasTex(256, 256, cobble('#bfae8a', '#ddd0b2', 'rgba(120,96,64,0.55)'), [1, 12]);
     var am = new T.MeshStandardMaterial({ map: tex, roughness: 0.95 });
     var ave = new T.Mesh(new T.PlaneGeometry(9, 104), am); ave.rotation.x = -Math.PI / 2; ave.position.set(0, 0.04, 64); ave.receiveShadow = true; scene.add(ave);
-    var rtex = canvasTex(256, 256, cobble('#d9ccb0', '#efe6d2'), [18, 18]);
+    var rtex = canvasTex(256, 256, cobble('#bfae8a', '#ddd0b2'), [18, 18]);
     var ring = new T.Mesh(new T.RingGeometry(RING - 3.2, RING + 3.2, 160, 1), new T.MeshStandardMaterial({ map: rtex, roughness: 0.95 }));
     ring.rotation.x = -Math.PI / 2; ring.position.y = 0.035; ring.receiveShadow = true; scene.add(ring);
     [RING - 3.2, RING + 3.2].forEach(function (rr0) { var e = new T.Mesh(new T.RingGeometry(rr0 - 0.25, rr0 + 0.25, 160, 1), std('#9c8a6a')); e.rotation.x = -Math.PI / 2; e.position.y = 0.045; scene.add(e); });
     Object.keys(DC.PARK.zones).forEach(function (k) {
       var q = DC.PARK.zones[k], L = Math.hypot(q.x, q.z), len = L - SPOKE_IN;
-      var t2 = canvasTex(256, 256, cobble('#d9ccb0', '#efe6d2', 'rgba(120,96,64,0.55)'), [1, Math.round(len / 8)]);
+      var t2 = canvasTex(256, 256, cobble('#bfae8a', '#ddd0b2', 'rgba(120,96,64,0.55)'), [1, Math.round(len / 8)]);
       var p = new T.Mesh(new T.PlaneGeometry(6, len), new T.MeshStandardMaterial({ map: t2, roughness: 0.95 }));
       p.rotation.x = -Math.PI / 2; p.rotation.z = Math.atan2(q.x, q.z) + Math.PI;
       var mid = (SPOKE_IN + L) / 2 / L; p.position.set(q.x * mid, 0.03, q.z * mid); p.receiveShadow = true; scene.add(p);
