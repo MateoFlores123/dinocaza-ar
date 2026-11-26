@@ -69,9 +69,10 @@
     fx.appendChild(d); setTimeout(function () { d.remove(); }, 1000);
   }
   function flashWhite() { var f = document.createElement('div'); f.className = 'flashwhite'; $('#fxl').appendChild(f); setTimeout(function () { f.remove(); }, 520); }
-  function enemyName(e) { return e.boss ? e.boss.name : e.unique ? e.unique.name : e.sp.name; }
-  function backHome() { if (st && st.opts && st.opts.returnTo === 'walk' && DC.Walk) { cleanup(); hideStage(); DC.Walk.resume(); return true; } return false; }
-  function mapLabel() { return st && st.opts && st.opts.returnTo === 'walk' ? 'Volver al paseo' : 'Volver al mapa'; }
+  function enemyName(e) { return e.boss ? e.boss.name : e.xmas ? e.xmas.name : e.unique ? e.unique.name : e.sp.name; }
+  function backToWorld() { if (DC.Walk && !DC.Walk.menu) DC.Walk.resume(); else U().render(); }
+  function backHome() { if (st && DC.Walk) { cleanup(); hideStage(); DC.Walk.resume(); return true; } return false; }
+  function mapLabel() { return 'Volver al parque'; }
   function variantChip(lk) {
     if (!lk) return '';
     return '<span class="vchip' + (lk.unique ? ' unique' : '') + '" style="--vc:' + lk.chip + '">' + (lk.unique ? '★ Único' : U().esc(lk.name)) + '</span>';
@@ -142,7 +143,7 @@
     var lk = DC.look(roll.variant);
     var boss = st.opts.boss || null;
     if (boss) { stats = Object.assign({}, stats); stats.maxHp = Math.round(stats.maxHp * 2.2); stats.atk = Math.round(stats.atk * 1.1); actor.root.scale.multiplyScalar(1.25); }
-    st.enemy = { actor: actor, sp: sp, lvl: roll.lvl, variant: roll.variant, look: lk, unique: roll.unique, boss: boss, golden: roll.variant === 'oro', st: stats, hp: stats.maxHp, max: stats.maxHp, pos: new T.Vector3(x, 0, z), exhausted: false };
+    st.enemy = { actor: actor, sp: sp, lvl: roll.lvl, variant: roll.variant, look: lk, unique: roll.unique, xmas: roll.xmas || DC.XMAS_BY[roll.variant] || null, boss: boss, golden: roll.variant === 'oro', st: stats, hp: stats.maxHp, max: stats.maxHp, pos: new T.Vector3(x, 0, z), exhausted: false };
     st.phase = 'appear';
     var e = DC.Store.albumEntry(sp.id); e.seen++;
     s.totals.encounters++; DC.Store.bump('encounters');
@@ -174,6 +175,7 @@
     var e = st.enemy;
     hint('');
     if (e.boss) banner('<span style="color:#ffc93c">¡Jefe del parque!</span><br>' + U().esc(e.boss.name) + '<small>Réplica real · Nv. ' + e.lvl + ' · véncelo con tu equipo</small>', 2600);
+    else if (e.xmas) banner('<span style="color:#ff6b6b">¡Especial navideño!</span><br>' + U().esc(e.xmas.name) + '<small>Muy raro: aparece 1 por visita · +' + DC.POINTS.xmas + ' Dino-puntos</small>', 2600);
     else if (e.unique) banner('<span style="color:' + e.look.aura + '">¡Dinosaurio único!</span><br>' + U().esc(e.unique.name) + '<small>Atrápalo y gana un helado gratis</small>', 2600);
     else banner((e.look ? '<span style="color:' + e.look.aura + '">¡Variante ' + U().esc(e.look.name) + '!</span><br>' : '') + '¡' + U().esc(e.sp.name) + ' salvaje!<small>' + DC.RARITY[e.sp.rarity].name + ' · Nv. ' + e.lvl + '</small>', 1800);
     enemyPlate();
@@ -454,7 +456,8 @@
     s.items.ultra = (s.items.ultra || 0) + 1;
     st.levelUps = st.levelUps.concat(DC.Store.addXp(xp));
     var dl = DC.Store.addDinoXp(m.inst, xp * 0.9);
-    st.rewards.push(['Experiencia', '+' + xp + ' XP'], ['Dino-monedas', '+' + coins], ['Ultra Dinoesfera', '+1']);
+    var bp = DC.Store.addPoints(DC.POINTS.boss);
+    st.rewards.push(['Experiencia', '+' + xp + ' XP'], ['Dino-monedas', '+' + coins], ['Ultra Dinoesfera', '+1'], ['Dino-puntos', bp ? '+' + bp : 'Límite de hoy alcanzado']);
     if (dl) st.rewards.push([m.sp.name + ' subió de nivel', 'Nv. ' + m.inst.lvl]);
     if (s.visit) { s.visit.replicas = s.visit.replicas || {}; s.visit.replicas[e.boss.id] = 1; }
     s.bosses = s.bosses || {}; s.bosses[e.boss.id] = (s.bosses[e.boss.id] || 0) + 1;
@@ -496,7 +499,7 @@
   function chance(fern, ballType) {
     var e = st.enemy, R = DC.RARITY[e.sp.rarity], d = DC.DIFF;
     var hpF = 1 + 1.8 * (1 - Math.max(0, e.hp) / e.max);
-    var vm = e.look ? e.look.capture : 1;
+    var vm = e.look ? e.look.capture : e.xmas ? 0.6 : 1;
     var bm = DC.BALLS[ballType || 'dino'].mult;
     return Math.min(0.96, R.capture * hpF * d.capture * vm * bm * (fern ? 1.5 : 1));
   }
@@ -687,6 +690,9 @@
       var code = DC.Store.captureUnique(e.unique.id);
       if (code) { st.rewards.push(['¡Helado gratis!', 'Código en Premios']); st.prizes.push(code); }
     }
+    var pts = DC.Store.addPoints(DC.POINTS.capture[e.sp.rarity] + (e.look && !e.unique ? DC.POINTS.variant : 0) + (e.unique ? DC.POINTS.unique : 0));
+    if (e.xmas) { pts += DC.Store.captureXmas(e.xmas.id); st.rewards.push(['¡Especial navideño!', Object.keys(s.xmas).length + '/' + DC.XMAS.length + ' de la colección']); }
+    st.rewards.push(['Dino-puntos', pts ? '+' + pts : 'Límite de hoy alcanzado']);
     DC.Store.checkCollections().forEach(function (c) { st.rewards.push(['¡Colección completa!', c.label]); st.prizes.push(c); });
     st.captured = inst;
     DC.Store.save(); U().renderTop();
@@ -746,7 +752,7 @@
   }
   function endToMap(openFicha) {
     var res = st;
-    var toWalk = res && res.opts && res.opts.returnTo === 'walk' && DC.Walk;
+    var toWalk = !!DC.Walk;
     cleanup();
     hideStage();
     if (toWalk) DC.Walk.resume(); else U().render();
@@ -861,12 +867,12 @@
     switch (h) {
       case 'leave':
         if (st && st.photo) { cleanup(); hideStage(); U().render(); return; }
-        if (!st) { hideStage(); U().render(); return; }
+        if (!st) { hideStage(); backToWorld(); return; }
         if (!st.appeared && backHome()) return;
         if (st.appeared && (st.phase === 'battle' || st.phase === 'menu' || st.phase === 'capture' || st.phase === 'lost')) {
           if (st.me && st.me.inst.hp <= 0) { finish('lost'); return; }
           finish('fled');
-        } else { cleanup(); hideStage(); U().render(); }
+        } else { cleanup(); hideStage(); backToWorld(); }
         break;
       case 'mode':
         if (DC.AR.mode === 'ar') { DC.AR.stopCamera(); S().settings.camera = false; }

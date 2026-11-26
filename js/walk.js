@@ -42,22 +42,24 @@
   }
 
   /* ---------------- Avatar ---------------- */
-  function buildAvatar() {
-    var s = S(), a = s.avatar || {};
-    var skin = a.skin || DC.AVATAR_COLORS.skin[0], shirt = a.shirt || DC.AVATAR_COLORS.shirt[0];
+  function buildAvatar(a, preview) {
+    a = a || S().avatar || {};
+    var C = DC.AVATAR_COLORS;
+    var skin = a.skin || C.skin[0], shirt = a.shirt || C.shirt[0], pants = a.pants || C.pants[0], hair = a.hair || C.hair[0], hat = a.hat || 'navidad';
     var g = new T.Group();
     var body = new T.Group(); g.add(body);
     var legs = [];
     [-1, 1].forEach(function (sd) {
       var hip = new T.Group(); hip.position.set(sd * 0.18, 0.95, 0); body.add(hip);
-      add(cyl(0.12, 0.1, 0.8, '#3b4a5a', 10), 0, -0.4, 0, hip);
-      add(box(0.24, 0.14, 0.38, '#5a3b22'), 0, -0.82, 0.07, hip);
+      add(cyl(0.12, 0.1, 0.8, pants, 10), 0, -0.4, 0, hip);
+      add(box(0.24, 0.14, 0.38, '#3a2a1f'), 0, -0.82, 0.07, hip);
       legs.push(hip);
     });
-    var torso = add(cyl(0.3, 0.34, 0.75, shirt, 16), 0, 1.35, 0, body);
+    add(cyl(0.3, 0.34, 0.75, shirt, 16), 0, 1.35, 0, body);
     add(new T.Mesh(new T.SphereGeometry(0.3, 16, 10, 0, Math.PI * 2, 0, Math.PI / 2), std(shirt)), 0, 1.72, 0, body);
     add(box(0.5, 0.55, 0.22, '#f0a53a', { r: 0.6 }), 0, 1.4, -0.32, body); /* mochila */
     add(box(0.42, 0.16, 0.1, '#c97f1c'), 0, 1.25, -0.45, body);
+    if (hat === 'navidad' || hat === 'lana') { var sc = add(new T.Mesh(new T.TorusGeometry(0.26, 0.08, 8, 20), std(hat === 'navidad' ? '#d62839' : '#3a7bd5')), 0, 1.76, 0, body); sc.rotation.x = Math.PI / 2; }
     var arms = [];
     [-1, 1].forEach(function (sd) {
       var sh = new T.Group(); sh.position.set(sd * 0.4, 1.62, 0); body.add(sh);
@@ -66,24 +68,37 @@
       arms.push(sh);
     });
     var head = add(new T.Mesh(new T.SphereGeometry(0.3, 20, 16), std(skin, { r: 0.6 })), 0, 2.05, 0, body);
+    add(new T.Mesh(new T.SphereGeometry(0.315, 20, 12, 0, Math.PI * 2, 0, Math.PI * 0.45), std(hair, { r: 0.9 })), 0, 2.07, -0.02, body).rotation.x = -0.35;
     [-1, 1].forEach(function (sd) { add(new T.Mesh(new T.SphereGeometry(0.045, 8, 6), std('#1b2a33', { r: 0.2 })), sd * 0.11, 2.08, 0.27, body); });
     add(new T.Mesh(new T.TorusGeometry(0.08, 0.02, 6, 12, Math.PI), std('#7a2a2a')), 0, 1.97, 0.27, body).rotation.z = Math.PI;
-    if (a.hat !== false) {
+    if (hat === 'safari') {
       add(cyl(0.48, 0.48, 0.04, '#d8b66a', 24), 0, 2.27, 0, body);
       add(cyl(0.25, 0.3, 0.24, '#d8b66a', 20), 0, 2.4, 0, body);
       add(cyl(0.305, 0.305, 0.06, '#7a4e22', 20), 0, 2.32, 0, body);
+    } else if (hat === 'navidad') {
+      add(cyl(0.33, 0.34, 0.12, '#ffffff', 20), 0, 2.27, 0, body);
+      var cn = add(new T.Mesh(new T.ConeGeometry(0.3, 0.6, 18), std('#d62839')), 0, 2.6, -0.06, body); cn.rotation.x = -0.5;
+      add(new T.Mesh(new T.SphereGeometry(0.09, 10, 8), std('#ffffff')), 0, 2.82, -0.26, body);
+    } else if (hat === 'lana') {
+      add(new T.Mesh(new T.SphereGeometry(0.33, 18, 10, 0, Math.PI * 2, 0, Math.PI / 2), std('#3a7bd5', { r: 0.95 })), 0, 2.16, 0, body);
+      add(cyl(0.34, 0.34, 0.1, '#ffffff', 20), 0, 2.19, 0, body);
+      add(new T.Mesh(new T.SphereGeometry(0.1, 10, 8), std('#ffffff')), 0, 2.53, 0, body);
+    } else if (hat === 'gorra') {
+      add(new T.Mesh(new T.SphereGeometry(0.32, 18, 10, 0, Math.PI * 2, 0, Math.PI / 2), std(shirt)), 0, 2.15, 0, body);
+      var vis = add(cyl(0.2, 0.2, 0.03, shirt, 16), 0, 2.16, 0.28, body); vis.scale.z = 1.3;
     }
-    /* sombra suave y anillo de alcance */
+    if (preview) { g.userData = { body: body, legs: legs, arms: arms, head: head }; return g; }
+    /* sombra suave, anillo de alcance y flecha guía */
     var sh = new T.Mesh(new T.CircleGeometry(0.6, 24), new T.MeshBasicMaterial({ color: '#000000', transparent: true, opacity: 0.25, depthWrite: false }));
     sh.rotation.x = -Math.PI / 2; sh.position.y = 0.03; g.add(sh);
-    var ring = new T.Mesh(new T.RingGeometry(5.6, 5.9, 64), new T.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.35, depthWrite: false, side: T.DoubleSide }));
+    var ring = new T.Mesh(new T.RingGeometry(5.6, 5.85, 64), new T.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.3, depthWrite: false, side: T.DoubleSide }));
     ring.rotation.x = -Math.PI / 2; ring.position.y = 0.05; g.add(ring);
     var pulse = new T.Mesh(new T.RingGeometry(0.9, 1.1, 48), new T.MeshBasicMaterial({ color: '#ffc93c', transparent: true, opacity: 0.6, depthWrite: false, side: T.DoubleSide }));
     pulse.rotation.x = -Math.PI / 2; pulse.position.y = 0.06; g.add(pulse);
     g.userData = { body: body, legs: legs, arms: arms, head: head, pulse: pulse };
-    g.scale.setScalar(1);
     return g;
   }
+  W.buildAvatar = buildAvatar;
   W.rebuildAvatar = function () {
     if (!built) return;
     var p = avatar.position.clone(), r = avatar.rotation.y;
@@ -137,6 +152,8 @@
     [-5, 5].forEach(function (x) { add(box(1.4, 6, 1.4, '#efe6d2', { flat: true }), x, 3, 0, g); add(new T.Mesh(new T.ConeGeometry(1.1, 1.2, 4), std('#2fb36b', { flat: true })), x, 6.6, 0, g).rotation.y = Math.PI / 4; });
     add(box(11.4, 1.4, 1.2, '#2fb36b'), 0, 5.5, 0, g);
     sign('DINO PARK', '#ffc93c', 0, 5.5, 0.65, 7, g);
+    sign('¡Feliz Navidad!', '#d62839', 0, 4.3, 0.7, 5, g);
+    [-5, 5].forEach(function (x) { var wr = add(new T.Mesh(new T.TorusGeometry(0.6, 0.18, 8, 20), std('#2f7a3f')), x, 4.6, 0.75, g); add(new T.Mesh(new T.SphereGeometry(0.16, 8, 6), std('#d62839')), x, 4.05, 0.85, g); });
     add(box(2.2, 1.6, 1.4, '#efe6d2'), 7.6, 0.8, 0, g);
     sign('Boletería', '#16302a', 7.6, 1.9, 0.75, 2.2, g);
     scene.add(g); return g;
@@ -169,7 +186,7 @@
     sign(p.name, '#a8432e', 0, 3.9, 0, 5, g);
     scene.add(g); return g;
   }
-  var smoke = [], vrRing = null;
+  var smoke = [], vrRing = null, guide = null;
   function buildVR(p) {
     var g = new T.Group(); g.position.set(p.x, 0, p.z);
     add(cyl(3.6, 3.8, 0.3, '#2b2f4a', 32), 0, 0.15, 0, g);
@@ -187,10 +204,62 @@
   }
 
   /* ---------------- Escenario ---------------- */
-  function tree(x, z, s) {
+  var BULBS = ['#ff4d4d', '#ffd23f', '#4dc3ff', '#ff7fd0', '#7dff8a'];
+  var bulbMats = BULBS.map(function (c) { return new T.MeshStandardMaterial({ color: c, emissive: c, emissiveIntensity: 0.9, roughness: 0.3 }); });
+  function tree(x, z, s, xmas) {
     var g = new T.Group(); g.position.set(x, 0, z); scene.add(g);
     add(cyl(0.18 * s, 0.3 * s, 3 * s, '#6b4a32', 6), 0, 1.5 * s, 0, g);
-    for (var i = 0; i < 3; i++) add(new T.Mesh(new T.ConeGeometry((1.6 - i * 0.38) * s, 1.4 * s, 7), std(i % 2 ? '#2f7a3f' : '#3d8f49', { flat: true })), 0, (2.6 + i * 0.8) * s, 0, g);
+    for (var i = 0; i < 3; i++) {
+      add(new T.Mesh(new T.ConeGeometry((1.6 - i * 0.38) * s, 1.4 * s, 7), std(i % 2 ? '#2f7a3f' : '#3d8f49', { flat: true })), 0, (2.6 + i * 0.8) * s, 0, g);
+      add(new T.Mesh(new T.ConeGeometry((0.9 - i * 0.2) * s, 0.4 * s, 7), std('#ffffff', { flat: true })), 0, (3.05 + i * 0.8) * s, 0, g).castShadow = false;
+    }
+    if (xmas) {
+      for (var b = 0; b < 14; b++) {
+        var lv = rnd(), y = (2.1 + lv * 2.2) * s, rr = (1.5 - lv * 1.1) * s, an = rnd() * 6.28;
+        var m = new T.Mesh(new T.SphereGeometry(0.11 * s, 6, 5), bulbMats[b % bulbMats.length]); m.position.set(Math.cos(an) * rr, y, Math.sin(an) * rr); g.add(m);
+        twinkle.push(m);
+      }
+      add(starMesh(0.35 * s), 0, 4.75 * s, 0, g);
+    }
+    return g;
+  }
+  var twinkle = [];
+  function starMesh(r) {
+    var sh = new T.Shape();
+    for (var i = 0; i < 10; i++) { var rr = i % 2 ? r * 0.45 : r, an = i / 10 * Math.PI * 2 + Math.PI / 2; if (i) sh.lineTo(Math.cos(an) * rr, Math.sin(an) * rr); else sh.moveTo(Math.cos(an) * rr, Math.sin(an) * rr); }
+    var m = new T.Mesh(new T.ExtrudeGeometry(sh, { depth: r * 0.3, bevelEnabled: false }), std('#ffd23f', { m: 0.4, r: 0.3, em: '#ffb300', ei: 0.8 }));
+    m.userData.star = true; stars.push(m); return m;
+  }
+  var stars = [];
+  function gift(x, z, s, c, ry) {
+    var g = new T.Group(); g.position.set(x, 0, z); g.rotation.y = ry || 0; scene.add(g);
+    add(box(s, s * 0.8, s, c, { r: 0.6 }), 0, s * 0.4, 0, g);
+    add(box(s * 1.02, s * 0.82, s * 0.18, '#ffd23f', { r: 0.4 }), 0, s * 0.4, 0, g);
+    add(box(s * 0.18, s * 0.82, s * 1.02, '#ffd23f', { r: 0.4 }), 0, s * 0.4, 0, g);
+    add(new T.Mesh(new T.TorusGeometry(s * 0.16, s * 0.05, 6, 12), std('#ffd23f')), -s * 0.12, s * 0.86, 0, g).rotation.y = 0.6;
+    add(new T.Mesh(new T.TorusGeometry(s * 0.16, s * 0.05, 6, 12), std('#ffd23f')), s * 0.12, s * 0.86, 0, g).rotation.y = -0.6;
+  }
+  /* Nieve que cae alrededor de la cámara */
+  var snow = null;
+  function buildSnow() {
+    var n = S().settings.lite ? 350 : 900, pos = new Float32Array(n * 3), sp = new Float32Array(n);
+    for (var i = 0; i < n; i++) { pos[i * 3] = (Math.random() - 0.5) * 70; pos[i * 3 + 1] = Math.random() * 30; pos[i * 3 + 2] = (Math.random() - 0.5) * 70; sp[i] = 1.2 + Math.random() * 1.6; }
+    var geo = new T.BufferGeometry(); geo.setAttribute('position', new T.BufferAttribute(pos, 3));
+    var c = document.createElement('canvas'); c.width = c.height = 32; var g = c.getContext('2d');
+    var gr = g.createRadialGradient(16, 16, 0, 16, 16, 16); gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.5, 'rgba(255,255,255,0.8)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = gr; g.fillRect(0, 0, 32, 32);
+    var mat = new T.PointsMaterial({ size: 0.35, map: new T.CanvasTexture(c), transparent: true, depthWrite: false, opacity: 0.9 });
+    snow = new T.Points(geo, mat); snow.userData.sp = sp; snow.frustumCulled = false; scene.add(snow);
+  }
+  function updateSnow(dt, t) {
+    if (!snow) return;
+    var p = snow.geometry.attributes.position.array, sp = snow.userData.sp;
+    for (var i = 0; i < sp.length; i++) {
+      p[i * 3 + 1] -= sp[i] * dt; p[i * 3] += Math.sin(t + i) * dt * 0.3;
+      if (p[i * 3 + 1] < 0) p[i * 3 + 1] += 30;
+    }
+    snow.geometry.attributes.position.needsUpdate = true;
+    snow.position.set(av.x, 0, av.z);
   }
   function build() {
     built = true;
@@ -200,8 +269,8 @@
     renderer.shadowMap.type = T.PCFSoftShadowMap;
     renderer.domElement.className = 'walk-canvas';
     scene = new T.Scene();
-    scene.background = new T.Color('#9fdcff');
-    scene.fog = new T.Fog('#bfe8ff', 60, 150);
+    scene.background = new T.Color('#bcdcf2');
+    scene.fog = new T.Fog('#d7e9f5', 55, 150);
     cam = new T.PerspectiveCamera(55, 1, 0.1, 400);
     scene.add(new T.HemisphereLight('#ffffff', '#7a9a5a', 0.8));
     var sun = new T.DirectionalLight('#fff2d8', 0.95);
@@ -223,9 +292,14 @@
     var ring = new T.Mesh(new T.RingGeometry(30, 34, 96), pathM); ring.rotation.x = -Math.PI / 2; ring.position.y = 0.02; ring.receiveShadow = true; scene.add(ring);
     var ave = new T.Mesh(new T.PlaneGeometry(8, 70), pathM); ave.rotation.x = -Math.PI / 2; ave.position.set(0, 0.025, 40); ave.receiveShadow = true; scene.add(ave);
     var plaza = add(cyl(9, 9, 0.06, '#f4ecdc', 48), 0, 0.03, 0);
-    add(cyl(1.4, 1.8, 2, '#e2d6bd', 20), 0, 1, 0);
-    W.orb = add(new T.Mesh(new T.SphereGeometry(1.4, 32, 20), new T.MeshStandardMaterial({ color: '#ffb23d', emissive: '#f08a12', emissiveIntensity: 0.45, roughness: 0.2 })), 0, 3.4, 0);
-    add(new T.Mesh(new T.TorusGeometry(1.42, 0.14, 10, 40), std('#2a1a0f', { r: 0.4 })), 0, 3.4, 0).rotation.x = Math.PI / 2;
+    /* Gran árbol de Navidad con la Dinoesfera en la punta */
+    tree(0, 0, 3.0, true);
+    W.orb = add(new T.Mesh(new T.SphereGeometry(0.9, 32, 20), new T.MeshStandardMaterial({ color: '#ffb23d', emissive: '#f08a12', emissiveIntensity: 0.6, roughness: 0.2 })), 0, 15.6, 0);
+    add(new T.Mesh(new T.TorusGeometry(0.92, 0.1, 10, 40), std('#2a1a0f', { r: 0.4 })), 0, 15.6, 0).rotation.x = Math.PI / 2;
+    for (var gi = 0; gi < 9; gi++) { var ga = gi / 9 * Math.PI * 2 + 0.3; gift(Math.cos(ga) * (5 + (gi % 2)), Math.sin(ga) * (5 + (gi % 2)), 0.8 + (gi % 3) * 0.25, ['#d62839', '#2a9d5c', '#3a7bd5', '#8a63ff', '#ff7fb0'][gi % 5], ga); }
+    /* manchas de nieve */
+    var snowM = new T.MeshStandardMaterial({ color: '#ffffff', roughness: 1, transparent: true, opacity: 0.85 });
+    for (var sn = 0; sn < 70; sn++) { var sa = rnd() * 6.28, sd = 12 + rnd() * 66, pt = new T.Mesh(new T.CircleGeometry(1 + rnd() * 2.6, 12), snowM); pt.rotation.x = -Math.PI / 2; pt.position.set(Math.cos(sa) * sd, 0.015, Math.sin(sa) * sd); pt.receiveShadow = true; scene.add(pt); }
     Object.keys(P.zones).forEach(function (id) {
       var z = P.zones[id], zone = DC.ZONES[id - 1];
       var len = Math.hypot(z.x, z.z);
@@ -245,13 +319,15 @@
     for (var i = 0; i < 90; i++) {
       var a3 = rnd() * 6.28, d = 20 + rnd() * 55, x = Math.cos(a3) * d, zz = Math.sin(a3) * d;
       var clear = Math.abs(x) < 9 && zz > 0 || (d > 28 && d < 36) || DC.PLACES.concat(DC.REPLICAS).some(function (p) { return Math.hypot(p.x - x, p.z - zz) < 8; }) || Object.keys(P.zones).some(function (k) { var q = P.zones[k]; return Math.hypot(q.x - x, q.z - zz) < q.r + 1; });
-      if (!clear) tree(x, zz, 0.8 + rnd() * 0.8);
+      if (!clear) tree(x, zz, 0.8 + rnd() * 0.8, rnd() < 0.3);
     }
     /* faroles y bancas a lo largo de la avenida y el anillo */
     function lamp(x, z) {
       var g = new T.Group(); g.position.set(x, 0, z); scene.add(g);
-      add(cyl(0.08, 0.12, 3.4, '#2f3b36', 8), 0, 1.7, 0, g);
-      add(new T.Mesh(new T.SphereGeometry(0.3, 12, 8), std('#fff4c8', { em: '#ffd27a', ei: 0.6 })), 0, 3.5, 0, g);
+      for (var k = 0; k < 6; k++) add(cyl(0.1, 0.1, 0.56, k % 2 ? '#ffffff' : '#d62839', 8), 0, 0.28 + k * 0.56, 0, g);
+      add(new T.Mesh(new T.SphereGeometry(0.3, 12, 8), std('#fff4c8', { em: '#ffd27a', ei: 0.6 })), 0, 3.6, 0, g);
+      var wr = add(new T.Mesh(new T.TorusGeometry(0.34, 0.11, 8, 16), std('#2f7a3f')), 0, 2.6, 0.12, g);
+      add(new T.Mesh(new T.SphereGeometry(0.1, 8, 6), std('#d62839')), 0, 2.28, 0.2, g);
     }
     function bench(x, z, ry) {
       var g = new T.Group(); g.position.set(x, 0, z); g.rotation.y = ry; scene.add(g);
@@ -277,6 +353,11 @@
     });
     avatar = buildAvatar();
     scene.add(avatar);
+    buildSnow();
+    /* flecha que guía hacia el próximo hábitat */
+    var ash = new T.Shape(); ash.moveTo(0, 1.2); ash.lineTo(0.7, 0.2); ash.lineTo(0.25, 0.2); ash.lineTo(0.25, -0.6); ash.lineTo(-0.25, -0.6); ash.lineTo(-0.25, 0.2); ash.lineTo(-0.7, 0.2); ash.closePath();
+    guide = new T.Mesh(new T.ShapeGeometry(ash), new T.MeshBasicMaterial({ color: '#ffc93c', transparent: true, opacity: 0.9, depthWrite: false, side: T.DoubleSide }));
+    guide.rotation.order = 'YXZ'; scene.add(guide);
     placeReplicaActors();
     bindInput();
   }
@@ -292,7 +373,7 @@
       o.g.add(a.root); o.actor = a;
     });
   }
-  W.modelsChanged = function () { if (built) { placeReplicaActors(); dinos.forEach(function (d) { d.dead = true; }); } };
+  W.modelsChanged = function () { if (built) { placeReplicaActors(); dinos.forEach(function (d) { if (!d.xmas) d.dead = true; }); } };
 
   /* ---------------- Dinosaurios salvajes ---------------- */
   function zoneAt(x, z) {
@@ -301,26 +382,31 @@
     return { id: best, d: bd, inside: bd < DC.PARK.zones[best].r + 6 };
   }
   function spawnDino() {
-    if (dinos.length >= 6) return;
-    var a = Math.atan2(-Math.cos(camYaw), -Math.sin(camYaw)) + (rnd() - 0.5) * 1.1, d = 8 + rnd() * 14;
-    var x = av.x + Math.cos(a) * d, z = av.z + Math.sin(a) * d;
-    if (Math.hypot(x, z) > DC.PARK.radius - 4) return;
-    var zn = zoneAt(x, z);
-    if (!zn.inside && rnd() < 0.3) return;
+    var zn = zoneAt(av.x, av.z), Z = DC.PARK.zones[zn.id];
+    if (zn.d > Z.r + 12) return;                      /* fuera de los hábitats no aparecen */
+    if (dinos.filter(function (d) { return d.zone === zn.id; }).length >= 4) return;
+    var x, z, ok = false;
+    for (var tr = 0; tr < 8 && !ok; tr++) {
+      var a = rnd() * 6.28, r = Math.sqrt(rnd()) * Z.r * 0.92;
+      x = Z.x + Math.cos(a) * r; z = Z.z + Math.sin(a) * r;
+      ok = Math.hypot(x - av.x, z - av.z) > 5 && !DC.REPLICAS.some(function (r) { return Math.hypot(r.x - x, r.z - z) < 7; });
+    }
+    if (!ok) return;
     var roll = DC.Store.rollEncounter(zn.id);
     var actor = new DC.Models.Actor(roll.sp, { variant: roll.variant });
     actor.root.scale.setScalar(roll.sp.id === 'brachiosaurus' ? 1.1 : 1.35);
     actor.root.position.set(x, 0, z);
     actor.root.traverse(function (m) { if (m.isMesh) m.castShadow = true; });
     scene.add(actor.root);
-    var lk = DC.look(roll.variant);
-    var mark = new T.Mesh(new T.RingGeometry(1.6, 2.0, 32), new T.MeshBasicMaterial({ color: lk ? lk.chip : DC.RARITY[roll.sp.rarity].color, transparent: true, opacity: 0.85, side: T.DoubleSide, depthWrite: false }));
+    var lk = DC.look(roll.variant), xm = roll.xmas || null;
+    var mark = new T.Mesh(new T.RingGeometry(1.6, 2.0, 32), new T.MeshBasicMaterial({ color: xm ? '#d62839' : lk ? lk.chip : DC.RARITY[roll.sp.rarity].color, transparent: true, opacity: 0.85, side: T.DoubleSide, depthWrite: false }));
     mark.rotation.x = -Math.PI / 2; mark.position.set(x, 0.07, z); scene.add(mark);
     var hit = new T.Mesh(new T.SphereGeometry(2.4, 8, 6), new T.MeshBasicMaterial({ visible: false })); hit.position.set(x, 1.2, z); scene.add(hit);
-    var dn = { actor: actor, mark: mark, hit: hit, roll: roll, zone: zn.id, born: clock.elapsedTime, wander: rnd() * 6.28, look: lk };
+    var dn = { actor: actor, mark: mark, hit: hit, roll: roll, zone: zn.id, born: clock.elapsedTime, wander: rnd() * 6.28, look: lk, xmas: xm };
     hit.userData.dino = dn;
     actor.play('spawn');
-    DC.FX.burst(new T.Vector3(x, 0.5, z), { color: lk ? lk.aura : '#c9a77a', count: 18, speed: 2, up: true, size: 0.35, additive: !!lk, gravity: -3 });
+    DC.FX.burst(new T.Vector3(x, 0.5, z), { color: xm ? '#ffffff' : lk ? lk.aura : '#c9a77a', count: 18, speed: 2, up: true, size: 0.35, additive: !!(lk || xm), gravity: -3 });
+    if (xm) DC.UI.toast('¡Un especial navideño apareció en ' + DC.UI.esc(DC.ZONES[zn.id - 1].short) + '!', 'star');
     dinos.push(dn);
   }
   function removeDino(dn) {
@@ -387,43 +473,72 @@
   function stopGPS() { if (gps.watch !== null && navigator.geolocation) navigator.geolocation.clearWatch(gps.watch); gps.watch = null; gps.on = false; hudMode(); }
   W.calibrate = function () { gps.origin = null; try { localStorage.removeItem('dinocaza_gps_origin'); } catch (e) {} if (!gps.watch) startGPS(); };
   W._tp = function (x, z) { av.x = x; av.z = z; av.tx = null; };
+  W.walkTo = function (zoneId) { var q = DC.PARK.zones[zoneId]; if (q && !gps.on) { av.tx = q.x; av.tz = q.z; } };
+  W.forceSpawn = function (xmasId) { DC.forceXmas = xmasId || null; var zn = zoneAt(av.x, av.z); spawnDino(); };
   W._engageFirst = function () { if (dinos[0]) engageDino(dinos[0]); };
   W._state = function () { return { av: av, dinos: dinos.length, near: nearKey, list: dinos.map(function (d) { var p = d.actor.root.position; return [d.roll.sp.id, +p.x.toFixed(1), +p.z.toFixed(1), d.actor.root.scale.x, d.actor.root.visible]; }) }; };
 
   /* ---------------- HUD ---------------- */
   function hud() {
-    var el = $('#walk');
-    el.innerHTML = '<div class="walk-host"></div><div class="walk-labels passthru"></div>' +
-      '<div class="walk-top"><button class="icon-btn" data-w="exit" aria-label="Volver al menú">' + DC.UI.icon('back') + '</button>' +
+    var el = $('#walk'), I = DC.UI.icon;
+    el.innerHTML = '<div class="walk-host"></div><div class="walk-labels"></div>' +
+      '<div class="w-top"><button class="w-prof" data-w="menu" data-tab="team" id="wprof" aria-label="Mi perfil"></button>' +
+      '<div class="w-stats" id="walkres"></div></div>' +
       '<div class="where" id="where"></div>' +
-      '<div class="walk-side"><button class="icon-btn" data-w="gps" id="gpsbtn" aria-label="Usar GPS">' + DC.UI.icon('map') + '</button>' +
-      '<button class="icon-btn" data-w="north" aria-label="Orientar al norte">' + DC.UI.icon('target') + '</button></div></div>' +
-      '<div class="walk-res" id="walkres"></div>' +
+      '<div class="zbanner" id="zbanner" aria-live="polite"></div>' +
       '<div class="near-card" id="nearcard" hidden></div>' +
       '<div class="joy" id="joy"><div class="joy-knob"></div></div>' +
-      '<div class="walk-help" id="walkhelp">Mueve el joystick o toca el suelo para caminar · arrastra para girar la cámara</div>';
+      '<div class="w-acts"><button class="w-btn" data-w="gps" id="gpsbtn" aria-label="Caminar con GPS">' + I('pin') + '</button>' +
+      '<button class="w-btn" data-w="map" aria-label="Ver mapa">' + I('map') + '</button>' +
+      '<button class="w-btn main" data-w="menu" aria-label="Menú">' + I('grid') + '</button></div>';
     el.querySelector('.walk-host').appendChild(renderer.domElement);
     bindJoystick($('#joy'));
     hudMode(); hudRes();
   }
   function hudMode() {
     var b = $('#gpsbtn'), j = $('#joy');
-    if (b) { b.classList.toggle('on', gps.on); }
+    if (b) b.classList.toggle('on', gps.on);
     if (j) j.hidden = gps.on;
-    var h = $('#walkhelp'); if (h) h.textContent = gps.on ? 'GPS activo: camina por el parque y tu avatar te sigue' : 'Mueve el joystick o toca el suelo para caminar · arrastra para girar la cámara';
   }
   function hudRes() {
-    var s = S(), el = $('#walkres'); if (!el) return;
-    el.innerHTML = '<span class="cur"><i class="coin-ico"></i><b class="num">' + s.coins + '</b></span><span class="cur"><i class="ball-ico dino"></i><b class="num">' + ((s.spheres || 0) + (s.items.super || 0) + (s.items.ultra || 0)) + '</b></span>';
+    var s = S(), el = $('#walkres'), pf = $('#wprof'); if (!el) return;
+    var need = DC.xpToNext(s.level);
+    if (pf) pf.innerHTML = '<span class="w-av" style="--sh:' + ((s.avatar && s.avatar.shirt) || '#2fb36b') + '">' + DC.UI.esc((s.name || 'E')[0].toUpperCase()) + '<b class="num">' + s.level + '</b></span><span class="w-name"><b>' + DC.UI.esc(s.name || 'Explorador') + '</b><i><u style="width:' + DC.UI.pct(s.xp, need) + '%"></u></i></span>';
+    el.innerHTML = '<span class="w-pill" title="Dino-puntos"><i class="pt-ico">★</i><b class="num">' + s.points + '</b></span>' +
+      '<span class="w-pill" title="Esferas"><i class="ball-ico dino"></i><b class="num">' + ((s.spheres || 0) + (s.items.super || 0) + (s.items.ultra || 0)) + '</b></span>';
   }
   W.hudRes = hudRes;
-  function placeName() {
-    var zn = zoneAt(av.x, av.z);
-    if (zn.d < DC.PARK.zones[zn.id].r + 2) return DC.ZONES[zn.id - 1].name;
-    if (Math.abs(av.x) < 10 && av.z > 20) return 'Calle de puestos';
-    if (Math.hypot(av.x, av.z) < 10) return 'Plaza de la Dinoesfera';
-    var pl = DC.PLACES.find(function (p) { return Math.hypot(p.x - av.x, p.z - av.z) < 9; });
-    return pl ? pl.name : 'Senderos de Dino Park';
+  /* Próximo hábitat sin visitar hoy (o el más cercano) */
+  function nextTarget() {
+    var v = S().visit || { zones: [] }, best = null, bd = 1e9;
+    Object.keys(DC.PARK.zones).forEach(function (k) {
+      if (v.zones.indexOf(+k) >= 0) return;
+      var q = DC.PARK.zones[k], d = Math.hypot(q.x - av.x, q.z - av.z);
+      if (d < bd) { bd = d; best = +k; }
+    });
+    return best ? { id: best, d: bd } : null;
+  }
+  var lastZone = null;
+  function updateWhere() {
+    var wh = $('#where'); if (!wh) return;
+    var zn = zoneAt(av.x, av.z), Z = DC.PARK.zones[zn.id], inside = zn.d < Z.r + 1;
+    var s = S();
+    if (inside && lastZone !== zn.id) {
+      lastZone = zn.id;
+      var z = DC.ZONES[zn.id - 1];
+      var bn = $('#zbanner');
+      if (bn) { bn.innerHTML = '<small>Hábitat ' + z.id + ' de 5</small>' + DC.UI.esc(z.name); bn.classList.remove('show'); void bn.offsetWidth; bn.classList.add('show'); }
+      DC.Audio.play('appear');
+      if (s.visit && s.visit.zones.indexOf(zn.id) < 0) {
+        var res = DC.Store.markZone(zn.id);
+        if (res.route) setTimeout(function () { DC.UI.toast('¡Recorriste los 5 hábitats! Canchita gratis en Premios', 'gift'); hudRes(); }, 1800);
+      }
+    } else if (!inside && zn.d > Z.r + 4) lastZone = null;
+    var nt = nextTarget();
+    if (inside) wh.innerHTML = '<b>' + DC.UI.esc(DC.ZONES[zn.id - 1].short) + '</b><span>Busca dinosaurios aquí</span>';
+    else if (nt) wh.innerHTML = '<span>Siguiente hábitat</span><b>' + DC.UI.esc(DC.ZONES[nt.id - 1].short) + ' · ' + Math.round(nt.d * DC.PARK.unit) + ' m</b>';
+    else wh.innerHTML = '<b>Ruta completa</b><span>Sigue explorando los hábitats</span>';
+    W._guide = inside ? null : nt;
   }
 
   /* Tarjeta de lo más cercano: dinosaurio, réplica o lugar */
@@ -440,9 +555,9 @@
     card.hidden = false;
     var s = S(), U = DC.UI;
     if (best.t === 'dino') {
-      var r = best.o.roll, lk = DC.look(r.variant), nm = r.unique ? r.unique.name : r.sp.name;
-      card.className = 'near-card dino';
-      card.innerHTML = '<div class="nc-img">' + U.img(r.sp.id, '', nm, r.variant) + '</div><div class="nc-body"><div class="eyebrow">' + (r.unique ? '¡Dinosaurio único!' : lk ? 'Variante ' + U.esc(lk.name) : '¡Un dinosaurio salvaje!') + '</div><b>' + U.esc(nm) + '</b><small>' + U.typeChip(r.sp.type) + ' Nv. ' + r.lvl + ' ' + U.stars(r.sp.rarity) + '</small></div>' +
+      var r = best.o.roll, lk = DC.look(r.variant), xm = r.xmas, nm = xm ? xm.name : r.unique ? r.unique.name : r.sp.name;
+      card.className = 'near-card dino' + (xm ? ' xmas' : '');
+      card.innerHTML = '<div class="nc-img">' + U.img(r.sp.id, '', nm, r.variant) + '</div><div class="nc-body"><div class="eyebrow">' + (xm ? '¡Especial navideño!' : r.unique ? '¡Dinosaurio único!' : lk ? 'Variante ' + U.esc(lk.name) : 'Dinosaurio salvaje') + '</div><b>' + U.esc(nm) + '</b><small>' + U.typeChip(r.sp.type) + ' Nv. ' + r.lvl + ' ' + U.stars(r.sp.rarity) + '</small></div>' +
         '<button class="btn sun" data-w="engage">' + U.icon('camera') + 'Atrapar</button>';
       DC.Audio.play('warn'); DC.Audio.vibe(40);
     } else if (best.t === 'rep') {
@@ -483,7 +598,8 @@
     var b = e.target.closest('[data-w]'); if (!b) return;
     DC.Audio.unlock();
     var w = b.dataset.w;
-    if (w === 'exit') { W.close(); DC.UI.render(); }
+    if (w === 'menu') DC.UI.openMenu(b.dataset.tab || 'album');
+    else if (w === 'map') DC.UI.openMenu('map');
     else if (w === 'gps') { if (gps.on || gps.watch !== null) stopGPS(); else startGPS(); }
     else if (w === 'north') { camYaw = 0; }
     else if (w === 'engage' && near && near.t === 'dino') engageDino(near.o);
@@ -543,27 +659,34 @@
     if (spawnT <= 0) { spawnT = (dinos.length < 3 ? 0.8 : 2) + rnd() * 2; spawnDino(); }
     dinos.slice().forEach(function (dn) {
       var p = dn.actor.root.position, far = Math.hypot(p.x - av.x, p.z - av.z);
-      if (dn.dead || far > 45 || t - dn.born > 120) { removeDino(dn); return; }
+      if (dn.dead || (!dn.xmas && (far > 45 || t - dn.born > 150))) { removeDino(dn); return; }
       dn.wander += dt * 0.4;
       var moving = Math.sin(t * 0.5 + dn.born) > 0.2 && !dn.actor.action;
       dn.actor.walk = moving ? 1 : 0;
       if (moving) { p.x += Math.cos(dn.wander) * dt * 1.2; p.z += Math.sin(dn.wander) * dt * 1.2; dn.actor.root.rotation.y = Math.atan2(Math.cos(dn.wander), Math.sin(dn.wander)); }
       dn.mark.position.set(p.x, 0.07, p.z); dn.hit.position.set(p.x, 1.2, p.z);
       dn.mark.rotation.z += dt;
-      if (dn.look && Math.random() < dt * 4) DC.FX.burst(new T.Vector3(p.x + (Math.random() - 0.5) * 2, 0.5 + Math.random() * 2, p.z + (Math.random() - 0.5) * 2), { tex: 'star', color: dn.look.aura, count: 1, speed: 0.3, size: 0.25, gravity: 0.5, life: 0.8 });
+      if ((dn.look || dn.xmas) && Math.random() < dt * 4) DC.FX.burst(new T.Vector3(p.x + (Math.random() - 0.5) * 2, 0.5 + Math.random() * 2, p.z + (Math.random() - 0.5) * 2), { tex: 'star', color: dn.xmas ? '#ffffff' : dn.look.aura, count: 1, speed: 0.3, size: 0.25, gravity: 0.5, life: 0.8 });
       dn.actor.update(dt);
     });
     replicas3d.forEach(function (o) { o.halo.rotation.z += dt * 0.8; o.halo.position.y = 1 + Math.sin(t * 2) * 0.15; if (o.actor) o.actor.update(dt); });
     places3d.forEach(function (o) { if (o.g.userData.gog) { o.g.userData.gog.rotation.y += dt; o.g.userData.gog.position.y = 4.6 + Math.sin(t * 2) * 0.25; } });
     if (vrRing) vrRing.material.color.setHSL((t * 0.1) % 1, 0.9, 0.6);
     smoke.forEach(function (s) { s.t = (s.t + dt * 0.3) % 1; s.s.position.y = s.y0 + s.t * 3; s.s.material.opacity = 0.45 * (1 - s.t); s.s.scale.setScalar(1 + s.t * 1.5); });
-    scene.traverse(function () {});
     if (W.orb) W.orb.rotation.y += dt * 0.6;
+    updateSnow(dt, t);
+    if (Math.random() < dt * 3 && twinkle.length) { var tw = twinkle[Math.floor(Math.random() * twinkle.length)]; tw.visible = !tw.visible; }
+    stars.forEach(function (st) { st.rotation.y += dt; });
+    if (guide) {
+      var gt = W._guide && DC.PARK.zones[W._guide.id];
+      guide.visible = !!gt;
+      if (gt) { var ang = Math.atan2(gt.x - av.x, gt.z - av.z); guide.position.set(av.x + Math.sin(ang) * 2.6, 0.09, av.z + Math.cos(ang) * 2.6); guide.rotation.set(-Math.PI / 2, 0, 0); guide.rotation.y = ang + Math.PI; guide.rotation.x = -Math.PI / 2; guide.material.opacity = 0.6 + Math.sin(t * 5) * 0.3; }
+    }
     DC.FX.update(dt);
     renderer.render(scene, cam);
     /* interfaz */
     W.whereT = (W.whereT || 0) - dt;
-    if (W.whereT <= 0) { W.whereT = 0.4; var wh = $('#where'); if (wh) wh.textContent = placeName(); updateNear(); }
+    if (W.whereT <= 0) { W.whereT = 0.35; updateWhere(); updateNear(); }
     var host = $('#walk'); if (!host) return;
     var w0 = host.clientWidth, h0 = host.clientHeight;
     labelEls.forEach(function (L) {
@@ -600,7 +723,13 @@
     if (!raf) loop();
     if (!S().walkTutorial) {
       S().walkTutorial = true; DC.Store.save();
-      DC.UI.modal('<div class="stack center-text"><div class="eyebrow">Modo paseo</div><h2>¡Camina por Dino Park!</h2><p class="muted">En el parque, activa el GPS (botón del mapa arriba a la derecha) y tu avatar caminará contigo. Los dinosaurios aparecen a tu alrededor: acércate o tócalos para atraparlos. Busca las réplicas reales con el haz dorado: son los jefes del parque.</p><button class="btn block sun" data-act="close">¡Vamos!</button></div>', { center: true });
+      var showTutRef = function showTut() {
+        if (document.querySelector('#overlay .modal-back, #overlay .onb')) { setTimeout(showTut, 500); return; }
+        DC.UI.modal('<div class="stack center-text tut"><div class="eyebrow">Cómo se juega</div><h2>Camina hasta los hábitats</h2>' +
+          '<ul class="tut-list"><li><b>1</b>Usa el joystick (o el GPS en el parque) para caminar.</li><li><b>2</b>Sigue la flecha dorada: los dinosaurios solo aparecen dentro de los 5 hábitats.</li><li><b>3</b>Acércate y toca <i>Atrapar</i>. Gana Dino-puntos y cámbialos por premios.</li><li><b>4</b>Los especiales navideños salen 1 por visita: ¡vuelve varios días!</li></ul>' +
+          '<button class="btn block sun" data-act="close">¡A caminar!</button></div>', { center: true });
+      };
+      setTimeout(showTutRef, 700);
     }
   };
   W.close = function () {
@@ -610,11 +739,13 @@
     $('#screens').hidden = false;
     DC.FX.init(DC.AR.scene);
   };
-  W.pause = function () { W.paused = true; $('#walk').hidden = true; DC.FX.init(DC.AR.scene); };
+  W.pause = function () { W.paused = true; keys = {}; joy.on = false; $('#walk').hidden = true; DC.FX.init(DC.AR.scene); };
   W.resume = function () {
     DC.FX.init(scene);
     $('#screens').hidden = true;
+    W.menu = false;
     $('#walk').hidden = false; W.paused = false; W.open = true; nearKey = ''; hudRes(); resize();
+    if (!raf) loop();
   };
 
   DC.Walk = W;

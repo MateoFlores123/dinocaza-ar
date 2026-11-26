@@ -82,15 +82,22 @@
   }
 
   /* ---------------- Barra superior y pestañas ---------------- */
+  var TITLES = { map: 'Mapa del parque', album: 'Álbum', team: 'Mi equipo', prizes: 'Premios', passport: 'Pasaporte' };
   function renderTop() {
-    var s = S(), need = DC.xpToNext(s.level);
-    $('#topbar').innerHTML =
-      '<div class="tb-inner"><div class="avatar" aria-hidden="true"><span>' + esc((s.name || 'D')[0].toUpperCase()) + '</span><b class="num">' + s.level + '</b></div>' +
-      '<div class="who"><div class="name">' + esc(s.name || 'Explorador') + '</div><div class="title">' + DC.titleFor(s.level) + '</div>' +
-      '<div class="xpbar" title="Experiencia ' + s.xp + ' de ' + need + '"><i style="width:' + pct(s.xp, need) + '%"></i></div></div>' +
-      '<div class="res"><span class="cur coin" title="Dino-monedas"><i class="coin-ico"></i><b class="num">' + s.coins + '</b></span>' +
-      '<span class="cur" title="Esferas"><i class="ball-ico dino"></i><b class="num">' + ballsTotal() + '</b></span></div>' +
-      '<button class="icon-btn light" data-act="settings" aria-label="Ajustes">' + icon('gear') + '</button></div>';
+    $('#topbar').innerHTML = '<div class="tb-inner"><button class="tb-back" data-act="closemenu">' + icon('back') + '<span>Parque</span></button>' +
+      '<h1 class="tb-title">' + TITLES[tab] + '</h1><button class="icon-btn soft" data-act="settings" aria-label="Ajustes">' + icon('gear') + '</button></div>';
+    if (DC.Walk && DC.Walk.hudRes) DC.Walk.hudRes();
+  }
+  function openMenu(t) {
+    if (DC.Walk) { DC.Walk.pause(); DC.Walk.menu = true; }
+    $('#screens').hidden = false;
+    go(t || tab);
+  }
+  function closeMenu() {
+    if (DC.Map3D) DC.Map3D.unmount();
+    closeModals();
+    $('#screens').hidden = true;
+    if (DC.Walk) DC.Walk.resume();
   }
   function renderTabs() {
     var s = S();
@@ -117,44 +124,32 @@
      INICIO: mapa 3D
      ===================================================================== */
   function nextZone() { var v = S().visit || { zones: [] }; return DC.ZONES.find(function (z) { return v.zones.indexOf(z.id) < 0; }); }
+  function xmasStrip() {
+    if (!DC.SEASON.xmas) return '';
+    var s = S(), n = Object.keys(s.xmas || {}).length, seen = s.visit ? (s.visit.xmasSeen || 0) : 0;
+    return '<button class="xmas-strip" data-act="tab" data-tab="album" data-sub="navidad"><span class="xs-snow">' + icon('snow') + '</span><span class="xs-txt"><b>Navidad Jurásica · ' + n + '/' + DC.XMAS.length + '</b><small>' +
+      (seen >= DC.XMAS_PER_VISIT ? 'Ya apareció el especial de hoy. ¡Vuelve mañana!' : 'Hoy puede aparecer 1 especial navideño en los hábitats') + '</small></span>' +
+      '<span class="xs-mini">' + DC.XMAS.slice(0, 3).map(function (x) { return img(x.sp, s.xmas[x.id] ? '' : 'sil', x.name, x.id); }).join('') + '</span></button>';
+  }
   function viewMap() {
     var s = S(), v = s.visit;
-    var d = new Date(DC.Store.now());
     var done = v ? v.zones.length : 0;
     var steps = '';
-    for (var i = 0; i < 5; i++) steps += '<i class="' + (i < done ? 'on' : '') + '"></i>';
-    var nz = nextZone();
-    var uq = Object.keys(s.uniques || {}).length;
-    var special = DC.SPECIES.filter(function (sp) { return sp.days || sp.afterHour || sp.minVisits; });
-    var todayChips = special.map(function (sp) {
-      var a = DC.Store.availability(sp), e = s.album[sp.id];
-      return '<div class="today-card' + (a.ok ? ' on' : '') + '">' + img(sp.id, e && e.caught ? '' : 'sil', sp.name) +
-        '<div><b>' + (e && e.seen ? esc(sp.name) : '???') + '</b><small>' + (a.ok ? 'Hoy aparece · Zona ' + sp.zone : esc(a.why)) + '</small></div></div>';
-    }).join('');
+    for (var i = 0; i < 5; i++) steps += '<i class="' + (v && v.zones.indexOf(i + 1) >= 0 ? 'on' : '') + '"></i>';
     var missions = v ? v.missions.map(function (m) {
       var def = DC.Store.missionDef(m.id); if (!def) return '';
       return '<div class="mission' + (m.done ? ' done' : '') + (m.claimed ? ' claimed' : '') + '"><div class="m-ic">' + icon(m.claimed ? 'check' : 'star') + '</div><div class="m-body"><b>' + esc(def.text) + '</b>' +
-        '<div class="m-bar"><i style="width:' + pct(m.progress, def.goal) + '%"></i></div><small class="num">' + m.progress + '/' + def.goal + ' · +' + def.coins + ' monedas · +' + def.xp + ' XP</small></div>' +
+        '<div class="m-bar"><i style="width:' + pct(m.progress, def.goal) + '%"></i></div><small class="num">' + m.progress + '/' + def.goal + ' · +' + def.coins + ' monedas</small></div>' +
         (m.claimed ? '' : m.done ? '<button class="btn small sun" data-act="claim" data-id="' + m.id + '">Reclamar</button>' : '') + '</div>';
     }).join('') : '';
-    var eggs = s.eggs.length ? '<div class="card egg-card"><div class="egg-shape" aria-hidden="true"></div><div><b>' + s.eggs.length + (s.eggs.length > 1 ? ' huevos incubando' : ' huevo incubando') + '</b><p class="muted">Eclosiona' + (s.eggs.length > 1 ? 'n' : '') + ' en tu próxima visita. Puede salir una especie que te falte o una de color.</p></div></div>' : '';
+    var eggs = s.eggs.length ? '<div class="card egg-card"><div class="egg-shape" aria-hidden="true"></div><div><b>' + s.eggs.length + (s.eggs.length > 1 ? ' huevos incubando' : ' huevo incubando') + '</b><p class="muted">Eclosiona' + (s.eggs.length > 1 ? 'n' : '') + ' en tu próxima visita.</p></div></div>' : '';
     return '<div class="home">' +
       '<div class="map-card"><div class="map3d" id="map3d"></div>' +
-      '<div class="map-top"><span class="tag">Visita #' + (v ? v.n : 1) + ' · ' + DC.DAYS[d.getDay()] + '</span><span class="tag route"><span class="route-steps">' + steps + '</span>' + done + '/5</span></div>' +
-      '<div class="map-hint">' + icon('map') + 'Gira la isla con el dedo y toca un hábitat</div></div>' +
-      '<button class="walk-cta" data-act="walk"><span class="wc-art" aria-hidden="true"><i class="wc-sun"></i><i class="wc-hill"></i><i class="wc-path"></i><i class="wc-dino"></i><i class="wc-kid"></i></span><span class="wc-txt"><b>Salir a caminar</b><small>Recorre el parque con tu avatar: puestos, juegos y réplicas jefe</small></span>' + icon('arrow') + '</button>' +
-      (nz ? '<button class="btn block sun big" data-act="zone" data-zone="' + nz.id + '">' + icon('camera') + 'Explorar ' + esc(nz.name) + '</button>'
-        : '<div class="card done-card">' + prizeArt('canchita') + '<div><b>¡Ruta del tesoro completa!</b><p class="muted">Tu canchita gratis está en Premios. Sigue explorando: los únicos aparecen en cualquier zona.</p></div></div>') +
-      '<div class="duo">' +
-      '<button class="card feature uniq" data-act="tab" data-tab="album" data-sub="uniques"><span class="f-art">' + prizeArt('helado') + '</span><b>Dinos únicos</b><small class="num">' + uq + ' de ' + DC.UNIQUES.length + ' · cada uno = helado gratis</small></button>' +
-      '<button class="card feature balls" data-act="tab" data-tab="prizes"><span class="f-balls"><i class="ball-ico dino"></i><i class="ball-ico super"></i><i class="ball-ico ultra"></i></span><b>Esferas</b><small class="num">' + s.spheres + ' Dino · ' + (s.items.super || 0) + ' Super · ' + (s.items.ultra || 0) + ' Ultra</small></button>' +
-      '</div>' +
-      '<div class="section-title"><h2>Misiones de hoy</h2><span class="muted">Completa las 3: +3 Dinoesferas y 1 Superesfera</span></div>' +
-      '<div class="card list">' + missions + '</div>' +
-      eggs +
-      '<div class="section-title"><h2>Especies especiales</h2><span class="muted">Cambian según el día</span></div>' +
-      '<div class="today">' + todayChips + '</div>' +
-      '</div>';
+      '<div class="map-top"><span class="tag">Visita ' + (v ? v.n : 1) + '</span><span class="tag route"><span class="route-steps">' + steps + '</span>' + done + '/5 hoy</span></div></div>' +
+      '<p class="note">' + icon('pin') + '<span>El mapa es para mirar. Para atrapar dinosaurios, <b>camina hasta el hábitat</b> con tu avatar.</span></p>' +
+      xmasStrip() +
+      '<div class="section-title"><h2>Misiones de hoy</h2><span class="muted">Las 3: +3 esferas</span></div>' +
+      '<div class="list-plain">' + missions + '</div>' + eggs + '</div>';
   }
 
   function zoneSheet(zid) {
@@ -173,14 +168,15 @@
       var got = s.uniques[u.id];
       return '<span class="u-chip' + (got ? ' got' : '') + '" style="--vc:' + u.color + '">★ ' + (got ? esc(u.name) : 'Único escondido') + '</span>';
     }).join('') + '</div>' : '';
-    var qr = s.settings.qr;
+    var xm = DC.SEASON.xmas ? DC.XMAS.filter(function (x) { return x.zone === zid; }) : [];
+    var xs = xm.length ? '<div class="uniq-strip">' + xm.map(function (x) { var got = s.xmas[x.id]; return '<span class="u-chip xm' + (got ? ' got' : '') + '">' + icon('snow') + (got ? esc(x.name) : 'Especial navideño') + '</span>'; }).join('') + '</div>' : '';
+    var here = s.visit && s.visit.zones.indexOf(zid) >= 0;
     return modal('<div class="zone-hero" style="--zc:' + z.color + '"><div class="eyebrow">Hábitat ' + z.id + ' de 5</div><h2>' + esc(z.name) + '</h2><p>' + esc(z.desc) + '</p>' +
       '<button class="icon-btn soft" data-act="close" aria-label="Cerrar">' + icon('close') + '</button></div>' +
-      list + uq +
+      list + uq + xs +
       '<div class="stack" style="margin-top:16px">' +
-      (qr ? '<button class="btn block sun big" data-act="scanqr" data-zone="' + zid + '">' + icon('qr') + 'Escanear QR de la zona</button>' +
-        '<button class="btn ghost block small" data-act="explore" data-zone="' + zid + '">Ya estoy aquí (sin QR)</button>'
-        : '<button class="btn block sun big" data-act="explore" data-zone="' + zid + '">' + icon('camera') + 'Explorar con la cámara</button>') +
+      '<button class="btn block sun big" data-act="walkto" data-zone="' + zid + '">' + icon('pin') + 'Ir caminando</button>' +
+      '<p class="muted small center-text">' + (here ? 'Ya visitaste este hábitat hoy.' : 'Los dinosaurios aparecen cuando tu avatar llega al hábitat.') + '</p>' +
       '</div>');
   }
 
@@ -191,11 +187,12 @@
     var s = S(), n = DC.Store.caughtCount(), uq = Object.keys(s.uniques || {}).length;
     var nv = DC.VARIANT_ORDER.filter(function (v) { return DC.SPECIES.some(function (sp) { return s.album[sp.id] && s.album[sp.id].variants && s.album[sp.id].variants[v]; }); }).length;
     var seg = '<div class="segtabs" role="tablist">' +
-      [['species', 'Especies', n + '/' + DC.SPECIES.length], ['uniques', 'Únicos', uq + '/' + DC.UNIQUES.length], ['colors', 'Colores', nv + '/' + DC.VARIANT_ORDER.length]].map(function (t) {
+      [['species', 'Especies', n + '/' + DC.SPECIES.length], ['navidad', 'Navidad', Object.keys(s.xmas || {}).length + '/' + DC.XMAS.length], ['uniques', 'Únicos', uq + '/' + DC.UNIQUES.length], ['colors', 'Colores', nv + '/' + DC.VARIANT_ORDER.length]].map(function (t) {
         return '<button role="tab" data-act="albumsub" data-sub="' + t[0] + '" aria-selected="' + (albumSub === t[0]) + '">' + t[1] + '<small class="num">' + t[2] + '</small></button>';
       }).join('') + '</div>';
     var body;
-    if (albumSub === 'uniques') body = viewUniques();
+    if (albumSub === 'navidad') body = viewXmas();
+    else if (albumSub === 'uniques') body = viewUniques();
     else if (albumSub === 'colors') body = viewColors();
     else {
       body = '<div class="album-head"><div class="ring-prog" style="--p:' + pct(n, DC.SPECIES.length) + '"><b class="num">' + n + '</b><small>/' + DC.SPECIES.length + '</small></div><div><h1>Dinopedia</h1><p class="muted">Completa el álbum y gana una <b>entrada gratis</b>.</p></div></div>' +
@@ -210,6 +207,18 @@
         }).join('') + '</div>';
     }
     return '<div class="stack">' + seg + body + '</div>';
+  }
+  function viewXmas() {
+    var s = S(), n = Object.keys(s.xmas || {}).length, done = s.collectionPrizes.indexOf('xmas') >= 0;
+    return '<div class="xmas-hero"><div class="xh-snow" aria-hidden="true">' + icon('snow') + '</div><div><div class="eyebrow">Temporada especial</div><h1>Navidad Jurásica</h1>' +
+      '<p>6 dinosaurios con gorros, astas y estrellas. Son <b>muy raros</b>: sale como máximo <b>1 por visita</b>. Con los 6 ganas <b class="num">' + DC.POINTS.xmasAll + '</b> Dino-puntos y un <b>peluche</b>.</p>' +
+      '<div class="uq-bar"><i style="width:' + pct(n, DC.XMAS.length) + '%"></i><span class="num">' + n + ' / ' + DC.XMAS.length + '</span></div>' + (done ? '<span class="chip ok">' + icon('check') + 'Colección completa</span>' : '') + '</div></div>' +
+      '<div class="uniq-grid">' + DC.XMAS.map(function (x) {
+        var got = s.xmas[x.id];
+        return '<div class="ucard xcard' + (got ? ' got' : '') + '" style="--vc:' + x.color + '"><div class="u-img">' + img(x.sp, got ? '' : 'sil', x.name, x.id) + (got ? '' : '<span class="u-q">?</span>') + '</div>' +
+          '<b>' + (got ? esc(x.name) : '???') + '</b><small>' + (got ? esc(x.lore) : 'Hábitat ' + x.zone + ' · ' + esc(DC.ZONES[x.zone - 1].short)) + '</small>' +
+          '<span class="u-prize">+' + DC.POINTS.xmas + ' pts</span></div>';
+      }).join('') + '</div>';
   }
   function viewUniques() {
     var s = S(), n = Object.keys(s.uniques || {}).length;
@@ -340,40 +349,36 @@
     catch (e) { return '<span class="mono">' + esc(text) + '</span>'; }
   }
   function viewPrizes() {
-    var s = S(), v = s.visit || { bought: 0 };
-    var real = DC.PRIZE_SHOP.map(function (id) {
-      var p = DC.PRIZES[id], can = s.coins >= p.price;
-      return '<div class="prize-card" style="--pc:' + p.color + '"><div class="pc-art">' + prizeArt(id) + '</div><b>' + esc(p.name) + '</b><small>' + esc(p.place) + '</small>' +
-        '<div class="pc-bar"><i style="width:' + pct(s.coins, p.price) + '%"></i></div>' +
-        '<button class="btn small ' + (can ? 'sun' : 'ghost') + '" data-act="buyprize" data-id="' + id + '"' + (can ? '' : ' disabled') + '><i class="coin-ico"></i><span class="num">' + p.price + '</span></button></div>';
+    var s = S(), v = s.visit || { bought: 0 }, today = DC.Store.pointsToday(), cap = DC.POINTS.daily;
+    var real = DC.POINT_PRIZES.map(function (pp) {
+      var p = DC.PRIZES[pp.id], can = s.points >= pp.pts;
+      return '<div class="prow" style="--pc:' + p.color + '"><span class="pr-art">' + prizeArt(pp.id) + '</span><div class="pr-body"><b>' + esc(p.name) + '</b><small>' + esc(p.place) + '</small>' +
+        '<div class="pc-bar"><i style="width:' + pct(s.points, pp.pts) + '%"></i></div></div>' +
+        '<button class="btn small ' + (can ? 'sun' : 'ghost') + '" data-act="buyprize" data-id="' + pp.id + '"' + (can ? '' : ' disabled') + '><span class="num">' + pp.pts + '</span> pts</button></div>';
     }).join('');
-    var nU = Object.keys(s.uniques || {}).length;
-    var free = [
-      ['helado', 'Helado gratis', 'Por cada dinosaurio único (' + nU + '/8)'],
-      ['canchita', 'Canchita gratis', 'Completa la ruta de las 5 zonas en una visita'],
-      ['juego', 'Juego gratis', 'Sello de tu 3.ª visita'],
-      ['peluche', 'Peluche oficial', 'Sello de tu 10.ª visita'],
-      ['entrada', 'Entrada gratis', 'Completa el álbum de 15 especies'],
-      ['peluche_oro', 'Peluche dorado', 'Atrapa los 8 dinosaurios únicos']
-    ].map(function (f) { return '<div class="free-row"><span class="fr-art">' + prizeArt(f[0]) + '</span><div><b>' + f[1] + '</b><small>' + f[2] + '</small></div></div>'; }).join('');
     var shop = DC.SHOP.map(function (it) {
       var lim = it.id === 'sphere' && v.bought >= DC.SPHERE_BUY_LIMIT;
       var can = s.coins >= it.price && !lim;
       var have = it.id === 'sphere' ? s.spheres : (s.items[it.id] || 0);
       var ic = it.id === 'sphere' ? '<i class="ball-ico dino big"></i>' : it.id === 'super' ? '<i class="ball-ico super big"></i>' : it.id === 'ultra' ? '<i class="ball-ico ultra big"></i>' : '<span class="item-ic ' + it.id + '">' + icon('leaf') + '</span>';
-      return '<div class="shop-row">' + ic + '<div class="sr-body"><b>' + esc(it.name) + '</b><small>' + esc(it.desc) + (it.id === 'sphere' ? ' Hoy: ' + v.bought + '/' + DC.SPHERE_BUY_LIMIT + '.' : '') + ' Tienes <b class="num">' + have + '</b>.</small></div>' +
+      return '<div class="shop-row">' + ic + '<div class="sr-body"><b>' + esc(it.name) + '</b><small>' + esc(it.desc) + ' Tienes <b class="num">' + have + '</b>.</small></div>' +
         '<button class="btn small ' + (can ? 'green' : 'ghost') + '" data-act="buy" data-id="' + it.id + '"' + (can ? '' : ' disabled') + '><i class="coin-ico"></i><span class="num">' + it.price + '</span></button></div>';
     }).join('');
     var codes = s.codes.length ? s.codes.map(function (c) {
       return '<button class="code-card' + (c.redeemed ? ' used' : '') + '" data-act="showcode" data-code="' + c.code + '"><span class="cc-art">' + prizeArt(c.prize || 'sticker') + '</span><span class="cc-body"><b>' + esc(c.label) + '</b><span class="code mono">' + c.code + '</span><small>' + esc(c.source) + '</small></span>' +
         '<span class="cc-state">' + (c.redeemed ? 'Canjeado' : icon('qr')) + '</span></button>';
-    }).join('') : '<div class="card empty">Aún no tienes premios. Completa la ruta, atrapa un dinosaurio único o canjea monedas.</div>';
-    return '<div class="stack"><div class="wallet"><div><div class="eyebrow">Tus Dino-monedas</div><div class="wallet-num"><i class="coin-ico big"></i><b class="num">' + s.coins + '</b></div>' +
-      '<p>Se ganan peleando, capturando, con misiones y respondiendo fichas. Se guardan entre visitas.</p></div></div>' +
-      '<div class="section-title"><h2>Mis premios</h2><span class="muted">Muestra el QR en el lugar indicado</span></div>' + codes +
-      '<div class="section-title"><h2>Canjea en el parque</h2></div><div class="prize-grid">' + real + '</div>' +
-      '<div class="section-title"><h2>Gratis jugando</h2></div><div class="card list">' + free + '</div>' +
-      '<div class="section-title"><h2>Esferas y objetos</h2></div><div class="card list">' + shop + '</div></div>';
+    }).join('') : '<p class="muted empty-line">Aún no tienes premios. Junta Dino-puntos o completa la ruta de los 5 hábitats.</p>';
+    var P = DC.POINTS;
+    var earn = [['Capturar (común · rara · épica · legendaria)', P.capture.comun + ' · ' + P.capture.rara + ' · ' + P.capture.epica + ' · ' + P.capture.legendaria],
+      ['Dinosaurio de color', '+' + P.variant], ['Dinosaurio único', '+' + P.unique], ['Especial navideño', '+' + P.xmas], ['Vencer a un jefe (réplica)', '+' + P.boss], ['Ruta de los 5 hábitats', '+' + P.route],
+      ['Colección navideña completa', '+' + P.xmasAll + ' (sin límite)']].map(function (r) { return '<div class="earn-row"><span>' + r[0] + '</span><b class="num">' + r[1] + '</b></div>'; }).join('');
+    return '<div class="stack">' +
+      '<div class="wallet"><div class="eyebrow">Tus Dino-puntos</div><div class="wallet-num"><span class="pt-big">★</span><b class="num">' + s.points + '</b></div>' +
+      '<div class="daybar"><i style="width:' + pct(today, cap) + '%"></i></div><small class="num">Hoy ' + today + ' / ' + cap + ' · ' + (today >= cap ? 'Límite de hoy alcanzado: vuelve mañana' : 'límite diario, los premios grandes toman varias visitas') + '</small></div>' +
+      '<div class="section-title"><h2>Mis premios</h2></div>' + codes +
+      '<div class="section-title"><h2>Canjea tus puntos</h2></div><div class="list-plain">' + real + '</div>' +
+      '<div class="section-title"><h2>Cómo ganar puntos</h2></div><div class="list-plain earn">' + earn + '</div>' +
+      '<div class="section-title"><h2>Tienda</h2><span class="muted"><i class="coin-ico"></i> <b class="num">' + s.coins + '</b> monedas</span></div><div class="list-plain">' + shop + '</div></div>';
   }
   function prizeModal(c, onClose, title) {
     if (!c) { onClose && onClose(); return; }
@@ -406,20 +411,58 @@
       sw('camera', s.settings.camera, 'Cámara AR', 'Ver los dinosaurios sobre la cámara. Apagado: parque 3D') +
       sw('gyro', s.settings.gyro, 'Giroscopio', 'Mueve el celular para mirar alrededor') +
       sw('lite', s.settings.lite, 'Modo ligero', 'Menos efectos: ahorra batería') +
-      sw('qr', s.settings.qr, 'Validar zonas con QR', 'Para el parque: cada zona tiene su QR') +
       '</div>' +
-      avatarPicker() +
+      '<button class="btn ghost small" data-act="editavatar">' + icon('team') + 'Editar mi avatar</button>' +
       '<button class="btn ghost small" data-act="train">' + icon('target') + 'Entrenar réplicas del parque (cámara)</button>' +
       '<div class="card stack" style="gap:10px"><div><div class="eyebrow">Modo presentación</div><p class="muted">Para mostrar el proyecto sin esperar días reales.</p></div>' +
       '<button class="btn ghost small" data-act="dev-visit">Simular próxima visita (+1 día)</button>' +
       '<button class="btn ghost small" data-act="dev-spheres">+10 esferas de cada tipo y +2000 monedas</button>' +
       '<button class="btn ghost small" data-act="dev-unique">Hacer aparecer un dinosaurio único</button>' +
+      '<button class="btn ghost small" data-act="dev-xmas">Hacer aparecer un especial navideño</button>' +
+      '<button class="btn ghost small" data-act="dev-points">+500 Dino-puntos</button>' +
       '<button class="btn ghost small" data-act="panel">' + icon('chart') + 'Panel Dino Park</button>' +
       '<button class="btn danger small" data-act="reset">Borrar progreso</button></div>' +
       '<p class="credit">' + esc(DC.MODEL_CREDIT || '') + '</p>' +
       '</div>', {
       onClose: function () { var n = $('#set-name'); }
     });
+  }
+  function defaultAvatar() { var C = DC.AVATAR_COLORS; return { hat: 'navidad', shirt: C.shirt[2], pants: C.pants[0], skin: C.skin[0], hair: C.hair[0] }; }
+  function avatarPreview(host) {
+    var T = THREE, w = host.clientWidth || 200, h = host.clientHeight || 230;
+    var r = new T.WebGLRenderer({ antialias: true, alpha: true }); r.setPixelRatio(Math.min(2, window.devicePixelRatio || 1)); r.setSize(w, h);
+    host.appendChild(r.domElement);
+    var sc = new T.Scene(); sc.add(new T.HemisphereLight('#ffffff', '#8a9a7a', 1.0));
+    var dl = new T.DirectionalLight('#ffffff', 0.8); dl.position.set(2, 4, 3); sc.add(dl);
+    var cam = new T.PerspectiveCamera(30, w / h, 0.1, 50); cam.position.set(0, 1.55, 6.2); cam.lookAt(0, 1.3, 0);
+    var base = new T.Mesh(new T.CylinderGeometry(0.9, 0.9, 0.08, 32), new T.MeshStandardMaterial({ color: '#eef4f1' })); base.position.y = -0.04; sc.add(base);
+    var av = null, alive = true, t0 = performance.now();
+    function set(a) { if (av) sc.remove(av); av = DC.Walk.buildAvatar(a, true); sc.add(av); }
+    (function loop() { if (!alive) return; requestAnimationFrame(loop); var t = (performance.now() - t0) / 1000; if (av) { av.rotation.y = Math.sin(t * 0.8) * 0.6; av.userData.body.position.y = Math.abs(Math.sin(t * 2)) * 0.04; av.userData.arms[1].rotation.z = Math.sin(t * 3) * 0.15 + 0.15; } r.render(sc, cam); })();
+    return { set: set, dispose: function () { alive = false; r.dispose(); } };
+  }
+  function avatarForm(a) {
+    var C = DC.AVATAR_COLORS;
+    function row(label, k, list) { return '<div class="av-row"><span>' + label + '</span><div class="swatches">' + list.map(function (c) { return '<button class="swatch" data-av="' + k + '" data-v="' + c + '" style="--c:' + c + '" aria-label="' + label + '" aria-pressed="' + (a[k] === c) + '"></button>'; }).join('') + '</div></div>'; }
+    return '<div class="av-edit"><div class="av-prev" id="avprev"></div><div class="av-opts">' +
+      '<div class="av-hats">' + DC.AVATAR_HATS.map(function (h) { return '<button class="hat-btn" data-av="hat" data-v="' + h.id + '" aria-pressed="' + (a.hat === h.id) + '">' + esc(h.name) + '</button>'; }).join('') + '</div>' +
+      row('Polera', 'shirt', C.shirt) + row('Pantalón', 'pants', C.pants) + row('Piel', 'skin', C.skin) + row('Cabello', 'hair', C.hair) + '</div></div>';
+  }
+  function bindAvatarForm(root, a) {
+    var pv = avatarPreview(root.querySelector('#avprev')); pv.set(a);
+    root.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-av]'); if (!b) return;
+      a[b.dataset.av] = b.dataset.v; DC.Audio.play('tap');
+      root.querySelectorAll('[data-av="' + b.dataset.av + '"]').forEach(function (x) { x.setAttribute('aria-pressed', x === b); });
+      pv.set(a);
+    });
+    return pv;
+  }
+  function avatarEditor() {
+    var s = S(), a = Object.assign(defaultAvatar(), s.avatar || {});
+    var m = modal(head('', 'Mi avatar') + avatarForm(a) + '<button class="btn block sun" id="av-save">Guardar</button>', { center: true });
+    var pv = bindAvatarForm(m, a);
+    m.querySelector('#av-save').addEventListener('click', function () { s.avatar = a; DC.Store.save(); if (DC.Walk.rebuildAvatar) DC.Walk.rebuildAvatar(); pv.dispose(); m.close(); toast('Avatar actualizado', 'check'); });
   }
   function avatarPicker() {
     var a = S().avatar || {}, C = DC.AVATAR_COLORS;
@@ -506,20 +549,19 @@
     render();
   }
   function buyPrize(id) {
-    var s = S(), p = DC.PRIZES[id];
-    if (!p || s.coins < p.price) return;
-    var m = modal('<div class="stack center-text">' + prizeArt(id) + '<h2>¿Canjear ' + esc(p.name) + '?</h2><p class="muted">Se descontarán <b class="num">' + p.price + '</b> Dino-monedas y recibirás un código QR para ' + esc(p.place) + '.</p>' +
+    var s = S(), p = DC.PRIZES[id], pp = DC.POINT_PRIZES.find(function (x) { return x.id === id; });
+    if (!p || !pp || s.points < pp.pts) return;
+    var m = modal('<div class="stack center-text">' + prizeArt(id) + '<h2>¿Canjear ' + esc(p.name) + '?</h2><p class="muted">Se descontarán <b class="num">' + pp.pts + '</b> Dino-puntos y recibirás un código QR para ' + esc(p.place) + '.</p>' +
       '<div class="row"><button class="btn ghost" data-act="close" style="flex:1">Cancelar</button><button class="btn sun" id="bp-ok" style="flex:1">Canjear</button></div></div>', { center: true });
     m.querySelector('#bp-ok').addEventListener('click', function () {
       m.close();
-      s.coins -= p.price;
-      var c = DC.Store.addPrize(id, 'Canje con Dino-monedas');
+      s.points -= pp.pts;
+      var c = DC.Store.addPrize(id, 'Canje con Dino-puntos');
       DC.Store.save();
       render();
       prizeModal(c, null, '¡Premio listo!');
     });
   }
-
   function onClick(e) {
     var b = e.target.closest('[data-act]');
     if (!b) return;
@@ -550,7 +592,7 @@
         var spq = DC.SP[b.dataset.sp], ok = +b.dataset.i === spq.quiz.a, entry = DC.Store.albumEntry(spq.id);
         b.parentNode.querySelectorAll('button').forEach(function (x, i) { x.disabled = true; if (i === spq.quiz.a) x.classList.add('ok'); });
         if (ok) {
-          entry.quiz = true; s.coins += 30; s.totals.quiz++;
+          entry.quiz = true; s.coins += 30; s.totals.quiz++; DC.Store.addPoints(DC.POINTS.quiz);
           var lv = DC.Store.addXp(40), md = DC.Store.bump('quiz');
           DC.Audio.play('capture'); toast('¡Correcto! +40 XP · +30 monedas', 'check');
           md.forEach(function (m) { toast('Misión completada: ' + esc(m.text), 'star'); });
@@ -575,7 +617,17 @@
         try { navigator.clipboard.writeText(code).then(function () { toast('Código copiado', 'check'); }, function () { toast(code, 'qr'); }); } catch (er) { toast(code, 'qr'); }
         break;
       case 'settings': DC.Audio.play('tap'); settings(); break;
-      case 'walk': DC.Audio.play('tap'); DC.Walk.openWalk(); break;
+      case 'walk': DC.Audio.play('tap'); closeMenu(); break;
+      case 'closemenu': DC.Audio.play('back'); closeMenu(); break;
+      case 'walkto': DC.Audio.play('tap'); var wz = +b.dataset.zone; closeModals(); closeMenu(); DC.Walk.walkTo(wz); toast('Caminando a ' + esc(DC.ZONES[wz - 1].short) + '…', 'pin'); break;
+      case 'editavatar': closeModals(); avatarEditor(); break;
+      case 'dev-xmas':
+        var xl = DC.XMAS.filter(function (x) { return !s.xmas[x.id]; });
+        if (!xl.length) { toast('Ya tienes los 6 especiales navideños', 'star'); break; }
+        var xx = xl[Math.floor(Math.random() * xl.length)];
+        DC.forceXmas = xx.id; closeModals(); DC.Encounter.start(xx.zone);
+        break;
+      case 'dev-points': s.points += 500; s.pointsTotal += 500; DC.Store.save(); toast('+500 Dino-puntos', 'star'); render(); break;
       case 'train': DC.Vision.trainer(); break;
       case 'avatar':
         s.avatar = s.avatar || {}; s.avatar[b.dataset.k] = b.dataset.c; DC.Store.save();
@@ -612,38 +664,45 @@
   /* ---------------- Bienvenida ---------------- */
   function onboarding(done) {
     var s = S();
-    var st = { step: 0, name: s.name || '', age: s.age || 'nino', starter: 'triceratops' };
+    var st = { step: 0, name: s.name || '', age: s.age || 'nino', starter: 'triceratops', avatar: Object.assign(defaultAvatar(), s.avatar || {}) };
     var wrap = document.createElement('div');
     wrap.className = 'onb';
     $('#overlay').appendChild(wrap);
     var starters = ['triceratops', 'velociraptor', 'pteranodon'];
-    function dots() { var h = ''; for (var i = 0; i < 3; i++) h += '<i class="' + (i === st.step ? 'on' : '') + '"></i>'; return '<div class="steps-dots">' + h + '</div>'; }
+    var pv = null;
+    function dots() { var h = ''; for (var i = 1; i <= 3; i++) h += '<i class="' + (i === st.step ? 'on' : '') + '"></i>'; return '<div class="steps-dots">' + h + '</div>'; }
     function draw() {
+      if (pv) { pv.dispose(); pv = null; }
       var h = '';
       if (st.step === 0) {
-        h = '<div class="onb-hero"><div class="onb-sun"></div><div class="onb-orb" aria-hidden="true"><i class="ball-ico dino huge"></i></div>' +
-          '<div class="eyebrow light">Dino Park · Arequipa</div><div class="logo-word">Dino<em>Caza</em><span>AR</span></div>' +
-          '<p>Explora el parque, encuentra dinosaurios con la cámara, pelea, atrápalos con tu Dinoesfera y gana <b>helados, canchita, juegos y peluches</b> de verdad.</p></div>' +
-          '<div class="onb-foot"><button class="btn block sun big" data-o="next">Empezar la aventura</button></div>';
+        h = '<div class="onb-hero"><div class="snowfall" aria-hidden="true">' + '<i></i>'.repeat(18) + '</div>' +
+          '<div class="onb-orb" aria-hidden="true"><i class="ball-ico dino huge"></i><span class="santa-hat"></span></div>' +
+          '<div class="eyebrow light">Dino Park · Arequipa · Navidad Jurásica</div><div class="logo-word">Dino<em>Caza</em><span>AR</span></div>' +
+          '<p>Crea tu explorador, camina por el parque y atrapa dinosaurios. Junta Dino-puntos y gana <b>helados, canchita, juegos y peluches</b> de verdad.</p></div>' +
+          '<div class="onb-foot"><button class="btn block sun big" data-o="next">Crear mi explorador</button></div>';
       } else if (st.step === 1) {
-        h = '<div class="onb-body">' + dots() + '<h1>¿Cómo te llamas, explorador?</h1>' +
-          '<input id="onb-name" class="field" maxlength="18" placeholder="Tu nombre" value="' + esc(st.name) + '" autocomplete="nickname">' +
+        h = '<div class="onb-body">' + dots() + '<h1>¿Cómo te llamas?</h1>' +
+          '<input id="onb-name" class="field" maxlength="18" placeholder="Tu nombre de explorador" value="' + esc(st.name) + '" autocomplete="nickname">' +
           '<div class="eyebrow">¿Quién va a jugar?</div><div class="choice-grid">' +
-          [['nino', 'Niño o niña', 'Fichas fáciles de leer'], ['joven', 'Joven', '13 a 17 años'], ['adulto', 'Adulto', 'Fichas con datos científicos']].map(function (a) {
+          [['nino', 'Niño o niña', 'Fichas fáciles'], ['joven', 'Joven', '13 a 17 años'], ['adulto', 'Adulto', 'Datos científicos']].map(function (a) {
             return '<button class="choice" data-o="age" data-v="' + a[0] + '" aria-pressed="' + (st.age === a[0]) + '"><b>' + a[1] + '</b><small>' + a[2] + '</small></button>';
           }).join('') + '</div></div><div class="onb-foot"><button class="btn block sun big" data-o="next">Continuar</button></div>';
+      } else if (st.step === 2) {
+        h = '<div class="onb-body">' + dots() + '<h1>Personaliza tu avatar</h1><p class="muted">Así te verás caminando por el parque.</p>' + avatarForm(st.avatar) + '</div>' +
+          '<div class="onb-foot"><button class="btn block sun big" data-o="next">Listo</button></div>';
       } else {
-        h = '<div class="onb-body">' + dots() + '<h1>Elige tu primer compañero</h1><p class="muted">Te acompañará en las peleas. Cada tipo es fuerte contra otro.</p><div class="starter-grid">' +
+        h = '<div class="onb-body">' + dots() + '<h1>Elige tu compañero</h1><p class="muted">Te acompaña en las peleas. Cada tipo le gana a otro.</p><div class="starter-grid">' +
           starters.map(function (id) {
             var sp = DC.SP[id];
             return '<button class="starter" data-o="starter" data-v="' + id + '" aria-pressed="' + (st.starter === id) + '" style="--tc:' + DC.TYPES[sp.type].color + '">' + img(id, '', sp.name) +
               '<b>' + esc(sp.name) + '</b>' + typeChip(sp.type) + '<small>Fuerte contra ' + DC.TYPES[DC.TYPE_BEATS[sp.type]].name + '</small></button>';
-          }).join('') + '</div></div><div class="onb-foot"><button class="btn block sun big" data-o="finish">¡A explorar!</button></div>';
+          }).join('') + '</div></div><div class="onb-foot"><button class="btn block sun big" data-o="finish">¡Entrar al parque!</button></div>';
       }
       wrap.innerHTML = h;
       fillPortraits(wrap);
       var ni = wrap.querySelector('#onb-name');
       if (ni) ni.addEventListener('input', function () { st.name = ni.value; });
+      if (st.step === 2) pv = bindAvatarForm(wrap, st.avatar);
     }
     wrap.addEventListener('click', function (e) {
       var b = e.target.closest('[data-o]'); if (!b) return;
@@ -656,11 +715,12 @@
         st[o] = b.dataset.v;
         b.parentNode.querySelectorAll('[data-o]').forEach(function (x) { x.setAttribute('aria-pressed', x === b); });
       } else if (o === 'finish') {
-        s.name = st.name.trim().slice(0, 18); s.age = st.age; s.difficulty = 'normal'; s.onboarded = true;
+        s.name = st.name.trim().slice(0, 18); s.age = st.age; s.difficulty = 'normal'; s.onboarded = true; s.avatar = st.avatar;
         var inst = DC.Store.makeInst(st.starter, 3, 'normal');
         DC.Store.addToTeam(inst);
         var a = DC.Store.albumEntry(st.starter); a.seen++; a.caught++; a.first = Date.now();
         DC.Store.saveNow();
+        if (pv) pv.dispose();
         wrap.remove();
         done && done();
       }
@@ -673,7 +733,7 @@
     render: render, renderTop: renderTop, go: go, toast: toast, modal: modal, closeModals: closeModals,
     ficha: ficha, levelUp: levelUp, onboarding: onboarding, checkMedals: checkMedals, icon: icon, esc: esc,
     typeChip: typeChip, stars: stars, img: img, fillPortraits: fillPortraits, zoneSheet: zoneSheet, hpClass: hpClass, pct: pct,
-    prizeModal: prizeModal, prizeArt: prizeArt,
+    prizeModal: prizeModal, prizeArt: prizeArt, openMenu: openMenu, closeMenu: closeMenu, avatarEditor: avatarEditor,
     tab: function () { return tab; }
   };
 })();

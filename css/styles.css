@@ -660,3 +660,150 @@ img.sil { filter: brightness(0) opacity(0.28); }
 .vt-row .vt-txt small { color: var(--muted); font-weight: 700; font-size: 0.75rem; }
 .vt-row .btn.small { padding: 0 10px; min-height: 36px; }
 .small { font-size: 0.85rem; }
+
+/* =====================================================================
+   v5 · Minimalista + Navidad Jurásica
+   Menos sombras y colores; el paseo es la pantalla principal y el menú
+   se abre encima como una hoja limpia.
+   ===================================================================== */
+:root { --bg: #f6f8f7; --line: #e5ebe8; --xred: #d62839; --xgreen: #1f7a4d; --lift: 0 1px 2px rgba(22, 48, 42, 0.06); }
+body { background: #e9efec; }
+#app { background: var(--bg); }
+.btn { box-shadow: none; border-radius: 14px; font-size: 1rem; }
+.btn:active { transform: scale(0.97); box-shadow: none; }
+.btn.small { box-shadow: none; border-radius: 10px; }
+.btn.big { min-height: 54px; border-radius: 16px; font-size: 1.1rem; }
+.btn.ghost { border-width: 1px; }
+.card { box-shadow: none; border-radius: 16px; }
+h1 { font-size: 1.6rem; }
+/* Menú: cabecera limpia */
+.topbar { background: var(--bg); color: var(--ink); box-shadow: none; border-radius: 0; padding-bottom: 6px; border-bottom: 1px solid transparent; }
+.tb-inner { gap: 8px; }
+.tb-back { display: inline-flex; align-items: center; gap: 4px; height: 40px; padding: 0 12px 0 6px; border: 0; border-radius: 12px; background: #fff; box-shadow: inset 0 0 0 1px var(--line); font-weight: 900; font-size: 0.9rem; color: var(--ink); }
+.tb-back .icon { width: 20px; height: 20px; }
+.tb-title { flex: 1; text-align: center; font-size: 1.2rem; }
+.tabbar { background: #fff; box-shadow: 0 0 0 1px var(--line), 0 8px 24px rgba(22, 48, 42, 0.08); border-radius: 20px; }
+.tabbar button[aria-current="page"] { color: var(--xgreen); }
+.tabbar button[aria-current="page"] .tab-ic { background: #e3f3ea; transform: none; }
+.section-title h2 { font-size: 1.1rem; }
+.note { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border-radius: 14px; background: #fff; box-shadow: inset 0 0 0 1px var(--line); font-size: 0.86rem; color: var(--ink-2); }
+.note .icon { color: var(--xgreen); width: 20px; height: 20px; margin-top: 1px; }
+.list-plain { display: flex; flex-direction: column; background: #fff; border-radius: 16px; box-shadow: inset 0 0 0 1px var(--line); padding: 2px 14px; }
+.list-plain > * + * { border-top: 1px solid var(--line); }
+.empty-line { padding: 4px 2px; font-size: 0.88rem; }
+.map-card { box-shadow: none; border-radius: 20px; }
+.map-hint { display: none; }
+.wallet { background: #fff; color: var(--ink); box-shadow: inset 0 0 0 1px var(--line); border-radius: 20px; }
+.wallet .eyebrow { color: var(--muted); }
+.pt-big, .pt-ico { color: #f2b705; font-style: normal; }
+.pt-big { font-size: 2.2rem; line-height: 1; }
+.daybar { height: 8px; border-radius: 4px; background: #eef2f0; overflow: hidden; margin: 6px 0 4px; }
+.daybar i { display: block; height: 100%; background: linear-gradient(90deg, var(--xgreen), #5fd08f); border-radius: 4px; }
+.prow { display: flex; align-items: center; gap: 12px; padding: 10px 0; }
+.prow .pr-art { width: 46px; height: 46px; flex: none; display: grid; place-items: center; }
+.prow .pr-art svg { width: 44px; height: 44px; }
+.prow .pr-body { flex: 1; min-width: 0; }
+.prow .pr-body b { display: block; font-size: 0.95rem; }
+.prow .pr-body small { color: var(--muted); font-weight: 700; }
+.prow .pc-bar { height: 5px; border-radius: 3px; background: #eef2f0; margin-top: 5px; overflow: hidden; }
+.prow .pc-bar i { display: block; height: 100%; background: var(--pc); }
+.prow .btn { white-space: nowrap; }
+.earn-row { display: flex; justify-content: space-between; gap: 12px; padding: 9px 0; font-size: 0.85rem; }
+.earn-row b { white-space: nowrap; color: var(--xgreen); }
+.list-plain .shop-row, .list-plain .mission { border-radius: 0; }
+
+/* Franja y álbum navideño */
+.xmas-strip { display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px 14px; border: 0; border-radius: 16px; text-align: left; color: #fff;
+  background: linear-gradient(120deg, #c81d32, #8f1424); box-shadow: none; font-family: var(--font-body); }
+.xs-snow .icon { width: 28px; height: 28px; color: #fff; }
+.xs-txt { flex: 1; min-width: 0; }
+.xs-txt b { display: block; font-family: var(--font-display); font-weight: 400; font-size: 1.05rem; }
+.xs-txt small { opacity: 0.9; font-weight: 700; line-height: 1.25; display: block; }
+.xs-mini { display: flex; }
+.xs-mini img { width: 38px; height: 38px; margin-left: -10px; border-radius: 50%; background: rgba(255, 255, 255, 0.95); object-fit: contain; }
+.xmas-hero { display: flex; gap: 14px; padding: 18px; border-radius: 20px; color: #fff; background: radial-gradient(circle at 85% 10%, rgba(255, 255, 255, 0.18), transparent 40%), linear-gradient(140deg, #c81d32, #7d1020); }
+.xmas-hero h1 { color: #fff; }
+.xmas-hero .eyebrow { color: rgba(255, 255, 255, 0.75); }
+.xmas-hero p { font-size: 0.86rem; margin: 4px 0 10px; }
+.xh-snow .icon { width: 40px; height: 40px; color: #fff; }
+.xmas-hero .uq-bar { background: rgba(255, 255, 255, 0.25); }
+.xmas-hero .uq-bar i { background: #fff; }
+.xmas-hero .uq-bar span { color: #fff; }
+.chip.ok { background: rgba(255, 255, 255, 0.2); color: #fff; display: inline-flex; align-items: center; gap: 4px; margin-top: 8px; }
+.u-chip.xm { --vc: #d62839; }
+.xcard .u-prize { color: var(--xred); }
+.ucard.xcard.got { box-shadow: inset 0 0 0 2px var(--vc); }
+
+/* ---------------- Paseo: HUD minimal ---------------- */
+#walk { background: #bcdcf2; }
+.w-top { position: absolute; top: calc(env(safe-area-inset-top, 0px) + 12px); left: 12px; right: 12px; display: flex; align-items: center; gap: 8px; pointer-events: none; }
+.w-top > * { pointer-events: auto; }
+.w-prof { display: flex; align-items: center; gap: 8px; padding: 4px 12px 4px 4px; border: 0; border-radius: 99px; background: rgba(255, 255, 255, 0.92); box-shadow: 0 2px 10px rgba(22, 48, 42, 0.12); max-width: 55%; }
+.w-av { position: relative; width: 38px; height: 38px; border-radius: 50%; flex: none; display: grid; place-items: center; background: var(--sh); color: #fff; font-family: var(--font-display); font-size: 1.1rem; }
+.w-av b { position: absolute; right: -4px; bottom: -4px; min-width: 18px; height: 18px; padding: 0 4px; border-radius: 9px; background: #fff; color: var(--ink); font: 900 0.68rem/18px var(--font-body); box-shadow: 0 0 0 1px var(--line); }
+.w-name { min-width: 0; text-align: left; }
+.w-name b { display: block; font-size: 0.86rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.w-name i { display: block; width: 64px; height: 4px; border-radius: 2px; background: #e5ebe8; overflow: hidden; margin-top: 3px; }
+.w-name u { display: block; height: 100%; background: var(--xgreen); }
+.w-stats { margin-left: auto; display: flex; gap: 6px; }
+.w-pill { display: inline-flex; align-items: center; gap: 5px; padding: 6px 11px 6px 8px; border-radius: 99px; background: rgba(255, 255, 255, 0.92); font-weight: 900; font-size: 0.88rem; box-shadow: 0 2px 10px rgba(22, 48, 42, 0.12); }
+.w-pill .pt-ico { font-size: 1.05rem; line-height: 1; }
+.where { position: absolute; top: calc(env(safe-area-inset-top, 0px) + 64px); left: 50%; transform: translateX(-50%); flex: none; width: auto; max-width: calc(100% - 24px); display: flex; flex-direction: column; align-items: center; gap: 0;
+  padding: 6px 16px; border-radius: 14px; background: rgba(22, 48, 42, 0.62); color: #fff; font-family: var(--font-body); backdrop-filter: blur(8px); white-space: nowrap; }
+.where b { font-family: var(--font-display); font-weight: 400; font-size: 1rem; letter-spacing: 0.02em; }
+.where span { font-size: 0.7rem; font-weight: 800; opacity: 0.85; text-transform: uppercase; letter-spacing: 0.08em; }
+.zbanner { position: absolute; left: 0; right: 0; top: 34%; text-align: center; pointer-events: none; opacity: 0; font-family: var(--font-display); font-size: 2rem; color: #fff; text-shadow: 0 2px 0 rgba(22, 48, 42, 0.4), 0 6px 24px rgba(22, 48, 42, 0.4); }
+.zbanner small { display: block; font-family: var(--font-body); font-weight: 900; font-size: 0.75rem; letter-spacing: 0.16em; text-transform: uppercase; }
+.zbanner.show { animation: zb 2.6s ease forwards; }
+@keyframes zb { 0% { opacity: 0; transform: translateY(10px); } 15%, 75% { opacity: 1; transform: none; } 100% { opacity: 0; } }
+.w-acts { position: absolute; right: 16px; bottom: calc(env(safe-area-inset-bottom, 0px) + 26px); display: flex; flex-direction: column; gap: 10px; align-items: center; }
+.w-btn { width: 50px; height: 50px; border: 0; border-radius: 50%; display: grid; place-items: center; background: rgba(255, 255, 255, 0.94); color: var(--ink); box-shadow: 0 2px 10px rgba(22, 48, 42, 0.15); }
+.w-btn.main { width: 62px; height: 62px; background: var(--ink); color: #fff; }
+.w-btn.on { background: var(--xgreen); color: #fff; }
+.joy { width: 120px; height: 120px; background: rgba(255, 255, 255, 0.35); box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.8); }
+.joy-knob { box-shadow: 0 3px 10px rgba(0, 0, 0, 0.18); }
+.near-card { bottom: calc(env(safe-area-inset-bottom, 0px) + 160px); border-radius: 18px; box-shadow: 0 10px 30px rgba(22, 48, 42, 0.2); }
+.near-card.dino { box-shadow: inset 0 0 0 2px var(--sun), 0 10px 30px rgba(22, 48, 42, 0.2); }
+.near-card.dino.xmas { box-shadow: inset 0 0 0 2px var(--xred), 0 10px 30px rgba(22, 48, 42, 0.2); }
+.near-card.dino.xmas .eyebrow { color: var(--xred); }
+.near-card.rep { box-shadow: inset 0 0 0 2px #ffc93c, 0 10px 30px rgba(22, 48, 42, 0.2); }
+.wlabel { box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2); }
+.tut-list { list-style: none; margin: 4px 0 6px; padding: 0; display: flex; flex-direction: column; gap: 10px; text-align: left; }
+.tut-list li { display: flex; gap: 10px; align-items: flex-start; font-size: 0.92rem; }
+.tut-list b { width: 26px; height: 26px; flex: none; border-radius: 50%; display: grid; place-items: center; background: var(--xgreen); color: #fff; font-size: 0.8rem; }
+
+/* ---------------- Avatar: editor y vista previa ---------------- */
+.av-edit { display: flex; flex-direction: column; gap: 12px; margin-top: 8px; }
+.av-prev { height: 230px; border-radius: 20px; background: radial-gradient(circle at 50% 30%, #ffffff, #e6efea); overflow: hidden; }
+.av-prev canvas { display: block; width: 100% !important; height: 100% !important; }
+.av-opts { display: flex; flex-direction: column; gap: 10px; }
+.av-hats { display: flex; flex-wrap: wrap; gap: 6px; }
+.hat-btn { padding: 8px 12px; border: 0; border-radius: 99px; background: #fff; box-shadow: inset 0 0 0 1px var(--line); font-weight: 800; font-size: 0.82rem; }
+.hat-btn[aria-pressed="true"] { background: var(--ink); color: #fff; box-shadow: none; }
+.av-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.av-row > span { font-weight: 800; font-size: 0.85rem; color: var(--ink-2); }
+
+/* ---------------- Bienvenida navideña ---------------- */
+.onb { background: var(--bg); }
+.onb-hero { position: relative; overflow: hidden; background: linear-gradient(180deg, #123a2c, #1f6b4a 55%, #2a8a5c); }
+.onb-sun { display: none; }
+.santa-hat { position: absolute; left: 50%; top: -38px; width: 120px; height: 90px; transform: translateX(-30%) rotate(18deg); background: linear-gradient(#d62839, #b31d2e); clip-path: polygon(0 100%, 100% 100%, 62% 0); border-radius: 8px; }
+.santa-hat::after { content: ''; position: absolute; left: -6px; right: -6px; bottom: 0; height: 22px; background: #fff; border-radius: 12px; }
+.onb-orb { position: relative; }
+.snowfall { position: absolute; inset: 0; pointer-events: none; }
+.snowfall i { position: absolute; top: -10px; width: 6px; height: 6px; border-radius: 50%; background: #fff; opacity: 0.8; animation: snowf 7s linear infinite; }
+.snowfall i:nth-child(odd) { width: 4px; height: 4px; animation-duration: 9s; }
+.snowfall i:nth-child(1) { left: 4%; animation-delay: -1s; } .snowfall i:nth-child(2) { left: 10%; animation-delay: -5s; } .snowfall i:nth-child(3) { left: 17%; animation-delay: -3s; }
+.snowfall i:nth-child(4) { left: 23%; animation-delay: -7s; } .snowfall i:nth-child(5) { left: 29%; animation-delay: -2s; } .snowfall i:nth-child(6) { left: 35%; animation-delay: -6s; }
+.snowfall i:nth-child(7) { left: 41%; animation-delay: -4s; } .snowfall i:nth-child(8) { left: 47%; animation-delay: -8s; } .snowfall i:nth-child(9) { left: 53%; animation-delay: -1.5s; }
+.snowfall i:nth-child(10) { left: 59%; animation-delay: -5.5s; } .snowfall i:nth-child(11) { left: 65%; animation-delay: -3.5s; } .snowfall i:nth-child(12) { left: 71%; animation-delay: -7.5s; }
+.snowfall i:nth-child(13) { left: 77%; animation-delay: -2.5s; } .snowfall i:nth-child(14) { left: 83%; animation-delay: -6.5s; } .snowfall i:nth-child(15) { left: 89%; animation-delay: -4.5s; }
+.snowfall i:nth-child(16) { left: 95%; animation-delay: -0.5s; } .snowfall i:nth-child(17) { left: 14%; animation-delay: -8.5s; } .snowfall i:nth-child(18) { left: 62%; animation-delay: -9s; }
+@keyframes snowf { to { transform: translate(20px, 110vh); } }
+@media (prefers-reduced-motion: reduce) { .snowfall i, .zbanner.show, .wc-kid { animation: none; } }
+.onb-hero p { color: #e3f2ea; }
+.onb-hero p b { color: #fff; }
+.logo-word span { color: #bfe8d0; }
+.onb-hero .eyebrow.light { color: #bfe8d0; }
+.segtabs { display: grid; grid-template-columns: repeat(4, 1fr); }
+.segtabs button { font-size: 0.82rem; padding-inline: 4px; }

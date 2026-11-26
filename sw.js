@@ -1,5 +1,5 @@
 /* DinoCaza AR · service worker: modo sin internet para zonas con poca señal */
-var CACHE = 'dinocaza-v4';
+var CACHE = 'dinocaza-v5';
 var FILES = ['./', './index.html', './css/styles.css', './manifest.webmanifest',
   './js/data.js', './js/store.js', './js/audio.js', './js/models.js', './js/fx.js', './js/ar.js', './js/map3d.js', './js/ui.js', './js/encounter.js', './js/walk.js', './js/vision.js', './js/main.js',
   './vendor/three.min.js', './vendor/qrcode.js', './vendor/GLTFLoader.js', './vendor/SkeletonUtils.js',

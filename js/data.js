@@ -286,14 +286,14 @@ DC.xpToNext = function (lvl) { return 100 + 60 * (lvl - 1); };
 DC.dinoXpToNext = function (lvl) { return 60 + 30 * (lvl - 1); };
 
 /* Recursos por visita */
-DC.SPHERES_PER_VISIT = 10;
-DC.SPHERE_BUY_LIMIT = 6; /* compras con monedas por visita */
+DC.SPHERES_PER_VISIT = 6;
+DC.SPHERE_BUY_LIMIT = 4; /* compras con monedas por visita */
 
 /* ---------------------------------------------------------------------
    Pasaporte Jurásico: recompensas por número de visitas (días distintos)
    --------------------------------------------------------------------- */
 DC.PASSPORT = [
-  { visit: 1, title: 'Primera huella', reward: '10 Dinoesferas y tu primer compañero', items: {}, prize: null },
+  { visit: 1, title: 'Primera huella', reward: '6 Dinoesferas y tu primer compañero', items: {}, prize: null },
   { visit: 2, title: 'Rastro fresco', reward: 'Canchita gratis + huevo misterioso + 5 Dinoesferas. Aparece el Brachiosaurus.', items: { egg: 1, spheres: 5 }, prize: 'canchita' },
   { visit: 3, title: 'Sello del Rey', reward: 'Juego gratis + 2 Superesferas. Se despierta el T. rex.', items: { coins: 150, super: 2 }, prize: 'juego' },
   { visit: 5, title: 'Explorador fiel', reward: '20 % de descuento en tu próxima entrada + huevo', items: { coins: 250, egg: 1 }, prize: 'entrada20' },
@@ -305,7 +305,7 @@ DC.PASSPORT = [
    Tienda (Dino-monedas)
    --------------------------------------------------------------------- */
 DC.SHOP = [
-  { id: 'sphere', name: 'Dinoesfera', desc: 'Un intento más de captura. Máx. 6 por visita.', price: 60, kind: 'item' },
+  { id: 'sphere', name: 'Dinoesfera', desc: 'Un intento más de captura. Máx. 4 por visita.', price: 60, kind: 'item' },
   { id: 'super', name: 'Superesfera', desc: 'Captura x1.6. Hecha de zafiro y plata.', price: 140, kind: 'item' },
   { id: 'ultra', name: 'Ultraesfera', desc: 'Captura x2.4. Ideal para únicos y legendarios.', price: 300, kind: 'item' },
   { id: 'leaf', name: 'Hoja medicinal', desc: 'Cura el 60 % de la vida de un compañero.', price: 40, kind: 'item' },
@@ -364,6 +364,8 @@ DC.UNIQUE_CHANCE = 0.08;
 DC.look = function (variant) {
   if (!variant || variant === 'normal') return null;
   var u = DC.UNIQUE[variant];
+  var xm = DC.XMAS_BY && DC.XMAS_BY[variant];
+  if (xm) return null;
   if (u) return { id: u.id, name: u.name, unique: true, mult: 1.15, color: u.color, lerp: 0.85, metal: 0.25, rough: 0.35, emissive: u.emissive, glow: u.glow, aura: u.aura, coins: 3, capture: 0.6, chip: u.color };
   return DC.VARIANTS[variant] || null;
 };
@@ -454,3 +456,48 @@ DC.REPLICAS = [
   { id: 'rep_trex', sp: 'trex', name: 'T. rex Gigante', zone: 5, x: 52, z: 12, desc: 'La réplica más grande del parque. ¿Te atreves?' }
 ];
 DC.AVATAR_COLORS = { shirt: ['#2fb36b', '#39b6ff', '#ff6b57', '#8a63ff', '#ffc93c', '#ff7fb0'], skin: ['#f2c7a5', '#d9a273', '#b07a4f', '#7a4e30'] };
+
+
+/* =====================================================================
+   NAVIDAD · dinosaurios especiales con ropa, puntos y premios grandes
+   ===================================================================== */
+DC.SEASON = { xmas: true, name: 'Navidad Jurásica' };
+/* Cada especial navideño es raro: 7 % por encuentro en su zona, y como
+   máximo 1 por visita (día). Hace falta volver varios días para tenerlos todos. */
+DC.XMAS_CHANCE = 0.07;
+DC.XMAS_PER_VISIT = 1;
+DC.XMAS = [
+  { id: 'x_santa', sp: 'trex', name: 'Santa Rex', zone: 5, outfit: 'santa', color: '#e63946', lore: 'Reparte huevos de regalo en la Guarida del Rey.' },
+  { id: 'x_reno', sp: 'triceratops', name: 'Tricera Reno', zone: 1, outfit: 'reno', color: '#a0662d', lore: 'Con sus cuernos y astas tira del trineo más pesado.' },
+  { id: 'x_duende', sp: 'velociraptor', name: 'Raptor Duende', zone: 2, outfit: 'duende', color: '#2a9d5c', lore: 'Ayuda a envolver regalos a toda velocidad.' },
+  { id: 'x_nieve', sp: 'stegosaurus', name: 'Stego Nevado', zone: 1, outfit: 'lana', color: '#4f8fd6', lore: 'Sus placas se cubren de escarcha y lleva bufanda.' },
+  { id: 'x_coro', sp: 'parasaurolophus', name: 'Parasauro Villancico', zone: 1, outfit: 'santa', color: '#d62839', lore: 'Su cresta suena como una campana navideña.' },
+  { id: 'x_estrella', sp: 'pteranodon', name: 'Ptera Estrella', zone: 4, outfit: 'estrella', color: '#f2b705', lore: 'Vuela con una estrella para la punta del árbol.' }
+];
+DC.XMAS_BY = {};
+DC.XMAS.forEach(function (x) { DC.XMAS_BY[x.id] = x; });
+
+/* Dino-puntos: se ganan jugando (con límite diario) y se canjean por premios grandes */
+DC.POINTS = {
+  daily: 400,
+  capture: { comun: 15, rara: 30, epica: 70, legendaria: 150 },
+  variant: 40, unique: 150, xmas: 150, boss: 120, route: 60, quiz: 10, win: 5,
+  xmasAll: 1500, uniquesAll: 800
+};
+/* Premios por puntos: los grandes necesitan varias visitas por el límite diario */
+DC.POINT_PRIZES = [
+  { id: 'sticker', pts: 250 },
+  { id: 'canchita', pts: 450 },
+  { id: 'helado', pts: 700 },
+  { id: 'juego', pts: 1100 },
+  { id: 'foto', pts: 1600 },
+  { id: 'peluche', pts: 3200 }
+];
+DC.AVATAR_HATS = [
+  { id: 'navidad', name: 'Gorro navideño' },
+  { id: 'safari', name: 'Safari' },
+  { id: 'lana', name: 'Gorro de lana' },
+  { id: 'gorra', name: 'Gorra' }
+];
+DC.AVATAR_COLORS.hair = ['#2b1a12', '#6b3e1f', '#c98a3c', '#e8d6a0'];
+DC.AVATAR_COLORS.pants = ['#3b4a5a', '#2f5d8a', '#6b4a32', '#2b2b2b'];

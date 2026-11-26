@@ -21,11 +21,13 @@
     var bonus = Math.min(5, s.visits - 1);
     DC.Audio.play(ev.hatched.length ? 'egg' : 'coin');
     DC.UI.modal('<div class="welcome"><div class="eyebrow">' + (simulated ? 'Modo presentación · día simulado' : 'Pasaporte Jurásico') + '</div>' +
-      '<h1>' + (ev.visitNo === 1 ? '¡Bienvenido a Dino Park!' : '¡Volviste! Visita n.º ' + ev.visitNo) + '</h1>' +
+      '<h1>' + (ev.visitNo === 1 ? '¡Bienvenido, ' + DC.UI.esc(s.name || 'explorador') + '!' : '¡Volviste! Visita n.º ' + ev.visitNo) + '</h1>' +
+      (DC.SEASON.xmas ? '<p class="muted">Navidad Jurásica: hoy puede aparecer <b>1 especial navideño</b> en los hábitats.</p>' : '') +
       '<ul class="reward-list"><li><span><i class="ball-ico dino"></i> Dinoesferas de hoy</span><b class="num">+' + (DC.SPHERES_PER_VISIT + bonus) + '</b></li>' +
+      '<li><span>Dino-puntos que puedes ganar hoy</span><b class="num">' + DC.POINTS.daily + '</b></li>' +
       (ev.visitNo > 1 ? '<li><span>Tu equipo se recuperó</span><b>100 %</b></li><li><span>Misiones nuevas</span><b class="num">3</b></li>' : '') + '</ul>' +
       (hatched || pass ? '<ul class="win-list">' + hatched + pass + '</ul>' : '') +
-      '<button class="btn block sun big" data-act="close">' + (ev.visitNo === 1 ? 'Ver el mapa' : '¡A explorar!') + '</button></div>', { center: true, onClose: function () { DC.UI.checkMedals(); } });
+      '<button class="btn block sun big" data-act="close">¡A caminar!</button></div>', { center: true, onClose: function () { DC.UI.checkMedals(); } });
   }
 
   function zoneFromHash() {
@@ -50,7 +52,7 @@
     DC.Store.tickHeal();
     setInterval(function () { DC.Store.tickHeal(); DC.Store.save(); }, 60000);
     function enter() {
-      $('#screens').hidden = false;
+      DC.Walk.openWalk();
       visitCheck(false);
       zoneFromHash();
     }

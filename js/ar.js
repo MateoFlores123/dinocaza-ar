@@ -228,6 +228,7 @@
     requestAnimationFrame(loop);
     var dt = Math.min(0.1, clock.getDelta());
     if (!R.active) return;
+    animateSnowAR(dt);
     var cam = R.camera;
     if (R.gyro.on && R.gyro.last) {
       gyroQuat(targetQ, R.gyro.last, R.gyro.alphaOffset);
@@ -412,6 +413,25 @@
       env.add(cl); clouds.push({ s: cl, a: ca, sp: 0.004 + rnd() * 0.004 });
     }
   }
+  /* Nieve navideña: se ve tanto con la cámara como en el parque 3D */
+  var arSnow = null;
+  function buildSnowAR() {
+    var n = DC.Store.get().settings.lite ? 250 : 600, pos = new Float32Array(n * 3), sp = new Float32Array(n);
+    for (var i = 0; i < n; i++) { pos[i * 3] = (Math.random() - 0.5) * 30; pos[i * 3 + 1] = Math.random() * 12; pos[i * 3 + 2] = (Math.random() - 0.5) * 30; sp[i] = 0.6 + Math.random() * 0.9; }
+    var geo = new T.BufferGeometry(); geo.setAttribute('position', new T.BufferAttribute(pos, 3));
+    var c = document.createElement('canvas'); c.width = c.height = 32; var g = c.getContext('2d');
+    var gr = g.createRadialGradient(16, 16, 0, 16, 16, 16); gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.5, 'rgba(255,255,255,0.75)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = gr; g.fillRect(0, 0, 32, 32);
+    arSnow = new T.Points(geo, new T.PointsMaterial({ size: 0.09, map: new T.CanvasTexture(c), transparent: true, depthWrite: false }));
+    arSnow.userData.sp = sp; arSnow.frustumCulled = false; R.scene.add(arSnow);
+  }
+  function animateSnowAR(dt) {
+    if (!DC.SEASON || !DC.SEASON.xmas) return;
+    if (!arSnow) buildSnowAR();
+    var p = arSnow.geometry.attributes.position.array, sp = arSnow.userData.sp, t = performance.now() / 1000;
+    for (var i = 0; i < sp.length; i++) { p[i * 3 + 1] -= sp[i] * dt; p[i * 3] += Math.sin(t + i) * dt * 0.15; if (p[i * 3 + 1] < 0) p[i * 3 + 1] += 12; }
+    arSnow.geometry.attributes.position.needsUpdate = true;
+  }
   function animateEnv(dt) {
     clouds.forEach(function (c) {
       c.a += c.sp * dt;
@@ -423,7 +443,7 @@
      Retratos 3D para el álbum (renderer pequeño aparte)
      ===================================================================== */
   var pr = null, prScene = null, prCam = null, cache = {};
-  var PKEY = 'dinocaza_portrait_v6_';
+  var PKEY = 'dinocaza_portrait_v7_';
   DC.portrait = function (spId, variant) {
     variant = variant && variant !== 'normal' ? variant : '';
     var key = spId + (DC.GLB.get(spId) ? '_glb' : '') + (variant ? '_' + variant : '');

@@ -25,7 +25,7 @@
       name: '', age: 'nino', difficulty: 'normal',
       settings: { sound: true, camera: true, lite: false, gyro: true, qr: false },
       level: 1, xp: 0, coins: 120, spheres: 0, items: { leaf: 2, fern: 1, super: 1, ultra: 0 },
-      uniques: {}, collectionPrizes: [],
+      uniques: {}, collectionPrizes: [], xmas: {}, points: 0, pointsTotal: 0, avatar: null,
       team: [], partner: null,
       album: {},
       visits: 0, lastDay: null, visitDays: [],
@@ -68,7 +68,7 @@
     var sp = DC.SP[inst.sp];
     var m = 1 + 0.085 * (inst.lvl - 1);
     var lk = DC.look(inst.variant || (inst.golden ? 'oro' : 'normal'));
-    var g = lk ? lk.mult : 1;
+    var g = lk ? lk.mult : (DC.XMAS_BY[inst.variant] ? 1.12 : 1);
     return {
       maxHp: Math.round(sp.base.hp * m * g),
       atk: Math.round(sp.base.atk * m * g),
@@ -137,7 +137,22 @@
     return { ok: true, why: 'Disponible hoy', kind: 'ok' };
   }
 
+  function rollXmas(zoneId) {
+    if (!DC.SEASON.xmas || !S.visit) return null;
+    var left = DC.XMAS.filter(function (x) { return x.zone === zoneId && !S.xmas[x.id]; });
+    var forced = DC.forceXmas ? DC.XMAS_BY[DC.forceXmas] : null;
+    DC.forceXmas = null;
+    if (forced) return forced;
+    if (!left.length || (S.visit.xmasSeen || 0) >= DC.XMAS_PER_VISIT || Math.random() > DC.XMAS_CHANCE) return null;
+    return left[Math.floor(Math.random() * left.length)];
+  }
   function rollEncounter(zoneId) {
+    var xm = rollXmas(zoneId);
+    if (xm) {
+      S.visit.xmasSeen = (S.visit.xmasSeen || 0) + 1; save();
+      var p0 = partner();
+      return { sp: DC.SP[xm.sp], lvl: Math.max(2, Math.round(Math.max(S.level, p0 ? p0.lvl : 1) + 2)), variant: xm.id, unique: null, xmas: xm };
+    }
     var uq = DC.forceUnique ? DC.UNIQUE[DC.forceUnique] : rollUnique(zoneId);
     DC.forceUnique = null;
     if (uq) {
@@ -184,7 +199,7 @@
     if (!variant || variant === 'normal') return;
     a.variants[variant] = (a.variants[variant] || 0) + 1;
     if (variant === 'oro') { a.golden++; S.totals.golden++; }
-    if (!DC.UNIQUE[variant]) S.totals.variants = (S.totals.variants || 0) + 1;
+    if (!DC.UNIQUE[variant] && !DC.XMAS_BY[variant]) S.totals.variants = (S.totals.variants || 0) + 1;
   }
   function addPrize(prizeId, source) {
     var pz = DC.PRIZES[prizeId];
@@ -199,13 +214,33 @@
     return c;
   }
   /* Premios por completar colecciones. Devuelve los códigos nuevos. */
+  function captureXmas(id) {
+    if (!DC.XMAS_BY[id] || S.xmas[id]) return 0;
+    S.xmas[id] = { at: Date.now() };
+    save();
+    return addPoints(DC.POINTS.xmas, true);
+  }
+  /* Suma Dino-puntos respetando el límite diario (bypass para colecciones). Devuelve lo sumado. */
+  function addPoints(n, bypass) {
+    n = Math.round(n || 0); if (n <= 0) return 0;
+    var v = S.visit;
+    if (!bypass && v) { var room = Math.max(0, DC.POINTS.daily - (v.points || 0)); n = Math.min(n, room); }
+    if (v && !bypass) v.points = (v.points || 0) + n;
+    S.points += n; S.pointsTotal += n;
+    save();
+    return n;
+  }
+  function pointsToday() { return S.visit ? (S.visit.points || 0) : 0; }
   function checkCollections() {
     var out = [];
+    if (DC.SEASON.xmas && DC.XMAS.every(function (x) { return S.xmas[x.id]; }) && S.collectionPrizes.indexOf('xmas') < 0) {
+      S.collectionPrizes.push('xmas'); addPoints(DC.POINTS.xmasAll, true); out.push(addPrize('peluche', 'Colección Navidad Jurásica completa'));
+    }
     if (caughtCount() >= DC.SPECIES.length && S.collectionPrizes.indexOf('album') < 0) {
       S.collectionPrizes.push('album'); out.push(addPrize('entrada', 'Álbum completo'));
     }
     if (Object.keys(S.uniques).length >= DC.UNIQUES.length && S.collectionPrizes.indexOf('uniques') < 0) {
-      S.collectionPrizes.push('uniques'); out.push(addPrize('peluche_oro', 'Los 8 dinosaurios únicos'));
+      S.collectionPrizes.push('uniques'); addPoints(DC.POINTS.uniquesAll, true); out.push(addPrize('peluche_oro', 'Los 8 dinosaurios únicos'));
     }
     if (out.length) save();
     return out;
@@ -245,7 +280,7 @@
     var bonus = Math.min(5, S.visits - 1);
     S.spheres = Math.max(S.spheres, 0) + DC.SPHERES_PER_VISIT + bonus;
     S.visit = { day: today, n: S.visits, zones: [], routeDone: false, missions: newMissions(), stats: freshVisitStats(),
-      startedAt: Date.now(), bought: 0, allClaimed: false };
+      startedAt: Date.now(), bought: 0, allClaimed: false, points: 0, xmasSeen: 0, places: {}, replicas: {} };
     /* Curación completa al volver */
     S.team.forEach(function (d) { d.hp = stats(d).maxHp; });
     /* Huevos: eclosionan en una visita posterior a la que se obtuvieron */
@@ -374,6 +409,7 @@
       S.totals.routes++;
       S.coins += 150;
       addPrize('canchita', 'Ruta del tesoro · ' + v.day);
+      addPoints(DC.POINTS.route);
     }
     save();
     return { first: first, route: route };
@@ -429,7 +465,7 @@
     checkVisit: checkVisit, bump: bump, claimMission: claimMission, missionDef: missionDef,
     addXp: addXp, addDinoXp: addDinoXp, markZone: markZone,
     addCode: addCode, validCode: validCode, checkMedals: checkMedals,
-    addPrize: addPrize, captureUnique: captureUnique, checkCollections: checkCollections, noteVariant: noteVariant,
+    addPrize: addPrize, captureUnique: captureUnique, captureXmas: captureXmas, addPoints: addPoints, pointsToday: pointsToday, checkCollections: checkCollections, noteVariant: noteVariant,
     rollVariant: rollVariant, uniquesLeft: uniquesLeft
   };
 })();

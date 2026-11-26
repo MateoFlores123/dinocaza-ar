@@ -121,3 +121,12 @@ El progreso se guarda en el navegador de cada visitante. Para producción, el si
 `js/vision.js` usa MobileNet (TensorFlow.js) y compara la cámara con fotos de referencia de cada estatua. Para entrenarlo: **Ajustes → Entrenar réplicas del parque**, tomar 4–8 fotos de cada réplica real desde distintos ángulos y **Exportar**; guardar el archivo como `replicas/referencias.json` para que todos los celulares las reconozcan. El triceratops funciona sin entrenamiento (ImageNet ya conoce la clase). Necesita internet la primera vez para descargar el modelo.
 
 > Las posiciones de lugares y réplicas (`DC.PARK`, `DC.PLACES`, `DC.REPLICAS` en `js/data.js`) son ilustrativas: ajústalas al plano real de Dino Park.
+
+
+## Versión 5 · Navidad Jurásica (minimalista)
+
+- **Crear usuario**: nombre, edad y **avatar personalizable** (gorro navideño, safari, lana o gorra; colores de polera, pantalón, piel y cabello) con vista previa 3D. Al terminar entras directo al parque caminando.
+- **El paseo es la pantalla principal.** El mapa 3D del menú es solo para mirar: los dinosaurios **solo aparecen dentro de los 5 hábitats**, así que hay que caminar hasta ellos (una flecha dorada guía al siguiente hábitat; "Ir caminando" desde el mapa lleva al avatar solo).
+- **Ambiente navideño**: nieve, gran árbol de Navidad con la Dinoesfera en la punta, regalos, faroles de bastón de caramelo con coronas y árboles con luces. También nieva en los encuentros.
+- **Especiales navideños** (Santa Rex, Tricera Reno, Raptor Duende, Stego Nevado, Parasauro Villancico, Ptera Estrella): llevan gorros, astas o estrella, son muy raros (7 % por encuentro en su hábitat, **máximo 1 por visita**) y más difíciles de capturar. Con los 6: +1500 Dino-puntos y un peluche.
+- **Dino-puntos y dificultad**: se ganan capturando, venciendo jefes y completando rutas, con **límite de 400 por día**. Los premios grandes (helado 700, juego 1100, foto 1600, peluche 3200) requieren varias visitas. Menos esferas por visita (6) y compra limitada (4).

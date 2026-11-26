@@ -708,6 +708,83 @@
     });
     return box;
   }
+  /* ---------------- Ropa navideña (accesorios en la cabeza) ---------------- */
+  function findHead(a) {
+    if (!a.isGLB) return a.head || null;
+    var h = null;
+    a.body.traverse(function (o) { if (!h && o.isBone && /^head$/i.test(o.name)) h = o; });
+    if (!h) a.body.traverse(function (o) { if (!h && o.isBone && /head/i.test(o.name)) h = o; });
+    return h;
+  }
+  function headBox(a, anchor) {
+    var box = new T.Box3(), v = new T.Vector3(), n = 0;
+    a.root.updateMatrixWorld(true);
+    if (a.isGLB) {
+      a.body.traverse(function (o) {
+        if (!o.isSkinnedMesh) return;
+        var bi = o.skeleton.bones.indexOf(anchor); if (bi < 0) return;
+        o.skeleton.update();
+        var pos = o.geometry.attributes.position, si = o.geometry.attributes.skinIndex, sw = o.geometry.attributes.skinWeight;
+        for (var i = 0; i < pos.count; i++) {
+          var w = (si.getX(i) === bi ? sw.getX(i) : 0) + (si.getY(i) === bi ? sw.getY(i) : 0) + (si.getZ(i) === bi ? sw.getZ(i) : 0) + (si.getW(i) === bi ? sw.getW(i) : 0);
+          if (w < 0.5) continue;
+          v.fromBufferAttribute(pos, i); o.boneTransform(i, v); v.applyMatrix4(o.matrixWorld); box.expandByPoint(v); n++;
+        }
+      });
+    } else { box.setFromObject(anchor); n = box.isEmpty() ? 0 : 1; }
+    return n ? box : null;
+  }
+  function om(c, o) { o = o || {}; return new T.MeshStandardMaterial({ color: c, roughness: o.r === undefined ? 0.7 : o.r, metalness: o.m || 0, emissive: o.em || '#000000', emissiveIntensity: o.ei || 0 }); }
+  function buildOutfit(kind) {
+    /* unidad: ancho de cabeza = 1, base en y = 0, frente hacia +z */
+    var g = new T.Group(), m;
+    function mesh(geo, mat, x, y, z) { var k = new T.Mesh(geo, mat); k.position.set(x || 0, y || 0, z || 0); k.castShadow = true; g.add(k); return k; }
+    if (kind === 'santa' || kind === 'duende') {
+      var red = om(kind === 'santa' ? '#d62839' : '#1f9d55'), white = om(kind === 'santa' ? '#ffffff' : '#ffd166', { r: 0.95 });
+      mesh(new T.CylinderGeometry(0.46, 0.5, 0.16, 20), white, 0, 0.08, 0);
+      var cone = mesh(new T.ConeGeometry(0.42, kind === 'santa' ? 0.95 : 1.2, 20, 4), red, 0, 0.6, -0.05);
+      cone.rotation.x = -0.35;
+      var tipY = kind === 'santa' ? 1.02 : 1.17, tipZ = kind === 'santa' ? -0.22 : -0.28;
+      if (kind === 'santa') mesh(new T.SphereGeometry(0.13, 12, 10), white, 0, tipY, tipZ);
+      else mesh(new T.SphereGeometry(0.1, 12, 10), om('#ffd23f', { m: 0.6, r: 0.3 }), 0, tipY, tipZ);
+    } else if (kind === 'lana') {
+      var blue = om('#3a7bd5', { r: 0.95 }), wh = om('#ffffff', { r: 0.95 });
+      mesh(new T.SphereGeometry(0.46, 20, 12, 0, Math.PI * 2, 0, Math.PI / 2), blue, 0, 0.05, 0);
+      mesh(new T.CylinderGeometry(0.48, 0.48, 0.16, 20), wh, 0, 0.08, 0);
+      mesh(new T.TorusGeometry(0.4, 0.035, 6, 20), wh, 0, 0.3, 0).rotation.x = Math.PI / 2;
+      mesh(new T.SphereGeometry(0.15, 12, 10), wh, 0, 0.55, 0);
+    } else if (kind === 'reno') {
+      var br = om('#8a5a2b');
+      [-1, 1].forEach(function (sd) {
+        var a = new T.Group(); a.position.set(sd * 0.28, 0, -0.05); a.rotation.z = -sd * 0.35; g.add(a);
+        var t = new T.Mesh(new T.CylinderGeometry(0.05, 0.07, 0.75, 8), br); t.position.y = 0.37; a.add(t);
+        [[0.28, 0.6], [0.5, -0.7], [0.68, 0.5]].forEach(function (q) {
+          var b = new T.Mesh(new T.CylinderGeometry(0.035, 0.045, 0.32, 6), br); b.position.set(sd * 0.1 * Math.sign(q[1]), q[0], 0); b.rotation.z = -sd * q[1]; a.add(b);
+        });
+      });
+    } else if (kind === 'estrella') {
+      var sh = new T.Shape();
+      for (var i = 0; i < 10; i++) { var r = i % 2 ? 0.2 : 0.46, an = i / 10 * Math.PI * 2 + Math.PI / 2; if (i) sh.lineTo(Math.cos(an) * r, Math.sin(an) * r); else sh.moveTo(Math.cos(an) * r, Math.sin(an) * r); }
+      var st = mesh(new T.ExtrudeGeometry(sh, { depth: 0.12, bevelEnabled: false }), om('#ffd23f', { m: 0.5, r: 0.3, em: '#ffb300', ei: 0.7 }), 0, 0.6, -0.06);
+      mesh(new T.CylinderGeometry(0.03, 0.03, 0.3, 6), om('#d9a400'), 0, 0.2, 0);
+    }
+    g.traverse(function (o) { if (o.isMesh) o.userData.outfit = true; });
+    return g;
+  }
+  function dress(a, kind) {
+    var anchor = findHead(a); if (!anchor) return;
+    var box = headBox(a, anchor); if (!box) return;
+    var sz = box.getSize(new T.Vector3()), c = box.getCenter(new T.Vector3());
+    var w = Math.max(Math.max(sz.x, Math.min(sz.y, sz.z)) * 0.95, (a.height || 1) * (kind === 'reno' ? 0.2 : 0.17));
+    var acc = buildOutfit(kind);
+    acc.scale.setScalar(w);
+    acc.position.set(c.x, box.max.y - sz.y * 0.12, c.z - sz.z * (a.kind === 'ptero' ? 0.05 : 0.12));
+    acc.updateMatrix(); acc.updateMatrixWorld(true);
+    anchor.attach(acc);
+    a.outfitObj = acc;
+    a.flashMats = a.flashMats.concat([]);
+  }
+  DC.Models_dress = dress;
   var DISPLAY_H = { theropod: 1.75, quad: 1.45, ptero: 1.0, plesio: 1.25 };
 
   function Actor(sp, opts) {
@@ -764,6 +841,9 @@
     this.length = size.z * sc;
     this.radius = Math.max(size.x, size.z) * sc * 0.5;
     /* punto de impacto aproximado (pecho) */
+    var xo = opts.outfit || (DC.XMAS_BY && DC.XMAS_BY[this.variant] && DC.XMAS_BY[this.variant].outfit);
+    if (xo) { try { dress(this, xo); } catch (e) { console.warn('outfit', e); } }
+    this.outfit = xo || null;
     this.chestLocal = new T.Vector3(0, this.baseBodyY + (this.kind === 'ptero' ? 0.05 : this.height * 0.55), this.length * 0.15);
 
     this.t = Math.random() * 10;
